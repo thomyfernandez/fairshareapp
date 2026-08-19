@@ -74,6 +74,17 @@ Compila el frontend y backend en un único ejecutable.
 
 ---
 
+### Opcion Docker
+
+1. Tener docker instalado y tirar el comando
+   ```bash
+   docker compose up --build
+   ```
+   
+2. Abrí **`http://localhost:8080`** en tu navegador para ver la aplicación web completa servida directamente por Spring Boot.
+
+---
+
 ## 🔌 Endpoints REST Disponibles
 
 | Método | Endpoint | Descripción |
