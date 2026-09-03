@@ -1,5 +1,7 @@
 package com.example.fairshareapp.service;
 
+import com.example.fairshareapp.exception.ArgumentInvalidException;
+import com.example.fairshareapp.exception.ResourceNotFoundException;
 import com.example.fairshareapp.model.Gasto;
 import com.example.fairshareapp.repository.GastoRepository;
 
@@ -55,17 +57,38 @@ public class GastoService {
      * 
      * @param gasto Instancia del gasto a registrar o actualizar.
      * @return Objeto Gasto persistido en la base de datos.
+     * @throws ArgumentInvalidException si el monto es nulo o no es un valor positivo.
      */
     public Gasto guardar(Gasto gasto) {
+        if (gasto.getMonto() == null || gasto.getMonto() <= 0) {
+            throw new ArgumentInvalidException(
+                    "El monto del gasto debe ser un valor positivo. Valor recibido: " + gasto.getMonto());
+        }
         return gastoRepository.save(gasto);
     }
 
     /**
+     * Busca un gasto por su ID o lanza una excepcion si no existe.
+     *
+     * @param id Identificador unico del gasto.
+     * @return Objeto Gasto encontrado.
+     * @throws ResourceNotFoundException si no existe un gasto con el ID indicado.
+     */
+    public Gasto obtenerPorIdOLanzar(Long id) {
+        return gastoRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Gasto", id));
+    }
+
+    /**
      * Elimina un gasto existente de la base de datos a partir de su ID.
-     * 
+     *
      * @param id Identificador unico del gasto a eliminar.
+     * @throws ResourceNotFoundException si no existe un gasto con el ID indicado.
      */
     public void eliminarPorId(Long id) {
+        if (!gastoRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Gasto", id);
+        }
         gastoRepository.deleteById(id);
     }
 }

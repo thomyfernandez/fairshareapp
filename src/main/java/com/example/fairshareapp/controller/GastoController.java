@@ -51,13 +51,12 @@ public class GastoController {
      * Endpoint HTTP GET para buscar un gasto por su identificador unico.
      * 
      * @param id Identificador unico del gasto a consultar.
-     * @return Gasto encontrado con HTTP 200 OK o respuesta HTTP 404 Not Found si no existe.
+     * @return Gasto encontrado con HTTP 200 OK o HTTP 404 Not Found si no existe
+     *         (lanzado como ResourceNotFoundException y traducido por el manejador global).
      */
     @GetMapping("/{id}")
     public ResponseEntity<Gasto> obtenerGastoPorId(@PathVariable Long id) {
-        return gastoService.obtenerPorId(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        return ResponseEntity.ok(gastoService.obtenerPorIdOLanzar(id));
     }
 
     /**
@@ -77,34 +76,29 @@ public class GastoController {
      * 
      * @param id Identificador unico del gasto a actualizar.
      * @param gastoActualizado Datos actualizados del gasto.
-     * @return Gasto modificado con HTTP 200 OK o HTTP 404 Not Found si no existe.
+     * @return Gasto modificado con HTTP 200 OK o HTTP 404 Not Found si no existe
+     *         (lanzado como ResourceNotFoundException y traducido por el manejador global).
      */
     @PutMapping("/{id}")
     public ResponseEntity<Gasto> actualizarGasto(@PathVariable Long id, @RequestBody Gasto gastoActualizado) {
-        return gastoService.obtenerPorId(id)
-                .map(gastoExistente -> {
-                    gastoExistente.setDescripcion(gastoActualizado.getDescripcion());
-                    gastoExistente.setMonto(gastoActualizado.getMonto());
-                    gastoExistente.setPagador(gastoActualizado.getPagador());
-                    gastoExistente.setFecha(gastoActualizado.getFecha());
-                    Gasto guardado = gastoService.guardar(gastoExistente);
-                    return ResponseEntity.ok(guardado);
-                })
-                .orElse(ResponseEntity.notFound().build());
+        Gasto gastoExistente = gastoService.obtenerPorIdOLanzar(id);
+        gastoExistente.setDescripcion(gastoActualizado.getDescripcion());
+        gastoExistente.setMonto(gastoActualizado.getMonto());
+        gastoExistente.setPagador(gastoActualizado.getPagador());
+        gastoExistente.setFecha(gastoActualizado.getFecha());
+        return ResponseEntity.ok(gastoService.guardar(gastoExistente));
     }
 
     /**
      * Endpoint HTTP DELETE para eliminar un gasto por su ID.
      * 
      * @param id Identificador unico del gasto a eliminar.
-     * @return Codigo HTTP 204 No Content si se elimino correctamente, o 404 Not Found si no existia.
+     * @return Codigo HTTP 204 No Content si se elimino correctamente, o 404 Not Found si no existia
+     *         (lanzado por el servicio como GastoNoEncontradoException).
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminarGasto(@PathVariable Long id) {
-        if (gastoService.obtenerPorId(id).isPresent()) {
-            gastoService.eliminarPorId(id);
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.notFound().build();
+        gastoService.eliminarPorId(id);
+        return ResponseEntity.noContent().build();
     }
 }
