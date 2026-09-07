@@ -1,110 +1,108 @@
 package com.example.fairshareapp.controller;
 
-import com.example.fairshareapp.model.entity.Gasto;
+import com.example.fairshareapp.model.dto.CrearGastoDTO;
+import com.example.fairshareapp.model.dto.GastoDetalleDTO;
 import com.example.fairshareapp.service.GastoService;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDate;
 import java.util.List;
 
 /**
- * Controlador REST para gestionar la API de gastos de la aplicacion FairShare.
- * Expone los endpoints HTTP para realizar operaciones CRUD sobre los gastos.
+ * Controlador REST para la administracion de gastos y particiones en los espacios.
+ * Proporciona endpoints para el registro individual o por lote, consulta por periodos y eliminacion.
  */
 @RestController
-@RequestMapping("/api/gastos")
+@RequestMapping("/api/v1")
 public class GastoController {
 
     private final GastoService gastoService;
 
     /**
-     * Constructor para la inyeccion de dependencias del servicio de gastos.
-     * 
-     * @param gastoService Instancia del servicio de negocio de gastos.
+     * Constructor con inyeccion de dependencias del servicio de gastos.
+     *
+     * @param gastoService Instancia del servicio de logica de negocio de gastos.
      */
-    @Autowired
     public GastoController(GastoService gastoService) {
         this.gastoService = gastoService;
     }
 
     /**
-     * Endpoint HTTP GET para listar todos los gastos registrados.
-     * 
-     * @return Lista de gastos con codigo HTTP 200 OK.
+     * Registra un nuevo gasto dentro de un espacio especifico.
+     *
+     * @param id Identificador unico del espacio.
+     * @param dto Informacion para la creacion del gasto y sus participantes.
+     * @return Detalle del gasto creado con codigo HTTP 201 Created.
      */
-    @GetMapping
-    public ResponseEntity<List<Gasto>> obtenerTodosLosGastos() {
-        List<Gasto> gastos = gastoService.obtenerTodos();
-        return ResponseEntity.ok(gastos);
-    }
-
-    /**
-     * Endpoint HTTP GET para buscar un gasto por su identificador unico.
-     * 
-     * @param id Identificador unico del gasto a consultar.
-     * @return Gasto encontrado con HTTP 200 OK o respuesta HTTP 404 Not Found si no existe.
-     */
-    @GetMapping("/{id}")
-    public ResponseEntity<Gasto> obtenerGastoPorId(@PathVariable Long id) {
-        return gastoService.obtenerPorId(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    /**
-     * Endpoint HTTP POST para registrar un nuevo gasto en el sistema.
-     * 
-     * @param gasto Objeto Gasto recibido en el cuerpo de la peticion HTTP.
-     * @return Gasto guardado con codigo HTTP 201 Created.
-     */
-    @PostMapping
-    public ResponseEntity<Gasto> crearGasto(@RequestBody Gasto gasto) {
-        Gasto gastoCreado = gastoService.guardar(gasto);
+    @PostMapping("/espacios/{id}/gastos")
+    public ResponseEntity<GastoDetalleDTO> registrarGasto(@PathVariable Long id,
+                                                          @RequestBody CrearGastoDTO dto) {
+        GastoDetalleDTO gastoCreado = gastoService.registrarGasto(id, dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(gastoCreado);
     }
 
     /**
-     * Endpoint HTTP PUT para actualizar un gasto existente.
-     * 
-     * @param id Identificador unico del gasto a actualizar.
-     * @param gastoActualizado Datos actualizados del gasto.
-     * @return Gasto modificado con HTTP 200 OK o HTTP 404 Not Found si no existe.
+     * Registra un conjunto o lote de gastos en un espacio de forma atomica.
+     *
+     * @param id Identificador unico del espacio.
+     * @param dtos Lista de gastos a registrar en el periodo.
+     * @return Lista de gastos registrados con codigo HTTP 201 Created.
      */
-    @PutMapping("/{id}")
-    public ResponseEntity<Gasto> actualizarGasto(@PathVariable Long id, @RequestBody Gasto gastoActualizado) {
-        return gastoService.obtenerPorId(id)
-                .map(gastoExistente -> {
-                    gastoExistente.setDescripcion(gastoActualizado.getDescripcion());
-                    gastoExistente.setMonto(gastoActualizado.getMonto());
-                    gastoExistente.setPagador(gastoActualizado.getPagador());
-                    gastoExistente.setFecha(gastoActualizado.getFecha());
-                    Gasto guardado = gastoService.guardar(gastoExistente);
-                    return ResponseEntity.ok(guardado);
-                })
-                .orElse(ResponseEntity.notFound().build());
+    @PostMapping("/espacios/{id}/gastos/lote")
+    public ResponseEntity<List<GastoDetalleDTO>> registrarLoteGastos(@PathVariable Long id,
+                                                                     @RequestBody List<CrearGastoDTO> dtos) {
+        List<GastoDetalleDTO> gastosCreados = gastoService.registrarLoteGastos(id, dtos);
+        return ResponseEntity.status(HttpStatus.CREATED).body(gastosCreados);
     }
 
     /**
-     * Endpoint HTTP DELETE para eliminar un gasto por su ID.
-     * 
-     * @param id Identificador unico del gasto a eliminar.
-     * @return Codigo HTTP 204 No Content si se elimino correctamente, o 404 Not Found si no existia.
+     * Obtiene el listado de gastos de un espacio, permitiendo opcionalmente filtrar por un rango de fechas.
+     *
+     * @param id Identificador unico del espacio.
+     * @param desde Fecha de inicio del periodo a filtrar (opcional).
+     * @param hasta Fecha de fin del periodo a filtrar (opcional).
+     * @return Lista de gastos del espacio o del lote filtrado con codigo HTTP 200 OK.
      */
-    @DeleteMapping("/{id}")
+    @GetMapping("/espacios/{id}/gastos")
+    public ResponseEntity<List<GastoDetalleDTO>> obtenerGastosPorEspacio(
+            @PathVariable Long id,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta) {
+        List<GastoDetalleDTO> gastos = gastoService.obtenerGastosPorEspacioYPeriodo(id, desde, hasta);
+        return ResponseEntity.ok(gastos);
+    }
+
+    /**
+     * Consulta el detalle especifico de un gasto a partir de su identificador unico.
+     *
+     * @param id Identificador unico del gasto.
+     * @return Detalle del gasto con codigo HTTP 200 OK.
+     */
+    @GetMapping("/gastos/{id}")
+    public ResponseEntity<GastoDetalleDTO> obtenerGastoPorId(@PathVariable Long id) {
+        GastoDetalleDTO gasto = gastoService.obtenerGastoPorId(id);
+        return ResponseEntity.ok(gasto);
+    }
+
+    /**
+     * Elimina un gasto del sistema a partir de su identificador unico.
+     *
+     * @param id Identificador unico del gasto a eliminar.
+     * @return Respuesta vacia con codigo HTTP 204 No Content.
+     */
+    @DeleteMapping("/gastos/{id}")
     public ResponseEntity<Void> eliminarGasto(@PathVariable Long id) {
-        if (gastoService.obtenerPorId(id).isPresent()) {
-            gastoService.eliminarPorId(id);
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.notFound().build();
+        gastoService.eliminarGasto(id);
+        return ResponseEntity.noContent().build();
     }
 }

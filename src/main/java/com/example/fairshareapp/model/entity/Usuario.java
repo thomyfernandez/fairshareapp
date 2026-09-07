@@ -22,5 +22,6 @@ public class Usuario {
     private String contra;
     private String nombre;
     private String apellido;
+    private Double sueldo;
 
 }
