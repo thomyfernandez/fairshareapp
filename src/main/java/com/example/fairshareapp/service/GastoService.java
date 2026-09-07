@@ -1,6 +1,6 @@
 package com.example.fairshareapp.service;
 
-import com.example.fairshareapp.model.Gasto;
+import com.example.fairshareapp.model.entity.Gasto;
 import com.example.fairshareapp.repository.GastoRepository;
 
 import jakarta.transaction.Transactional;
