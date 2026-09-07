@@ -1,6 +1,6 @@
 package com.example.fairshareapp.controller;
 
-import com.example.fairshareapp.model.Gasto;
+import com.example.fairshareapp.model.entity.Gasto;
 import com.example.fairshareapp.service.GastoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;

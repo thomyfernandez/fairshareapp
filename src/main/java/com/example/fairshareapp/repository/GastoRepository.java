@@ -1,6 +1,6 @@
 package com.example.fairshareapp.repository;
 
-import com.example.fairshareapp.model.Gasto;
+import com.example.fairshareapp.model.entity.Gasto;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 /**
