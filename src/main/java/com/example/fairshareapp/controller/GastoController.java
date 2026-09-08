@@ -3,6 +3,7 @@ package com.example.fairshareapp.controller;
 import com.example.fairshareapp.model.dto.CrearGastoDTO;
 import com.example.fairshareapp.model.dto.GastoDetalleDTO;
 import com.example.fairshareapp.service.GastoService;
+import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -46,7 +47,7 @@ public class GastoController {
      */
     @PostMapping("/espacios/{id}/gastos")
     public ResponseEntity<GastoDetalleDTO> registrarGasto(@PathVariable Long id,
-                                                          @RequestBody CrearGastoDTO dto) {
+                                                          @Valid @RequestBody CrearGastoDTO dto) {
         GastoDetalleDTO gastoCreado = gastoService.registrarGasto(id, dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(gastoCreado);
     }
@@ -60,7 +61,7 @@ public class GastoController {
      */
     @PostMapping("/espacios/{id}/gastos/lote")
     public ResponseEntity<List<GastoDetalleDTO>> registrarLoteGastos(@PathVariable Long id,
-                                                                     @RequestBody List<CrearGastoDTO> dtos) {
+                                                                     @Valid @RequestBody List<@Valid CrearGastoDTO> dtos) {
         List<GastoDetalleDTO> gastosCreados = gastoService.registrarLoteGastos(id, dtos);
         return ResponseEntity.status(HttpStatus.CREATED).body(gastosCreados);
     }
