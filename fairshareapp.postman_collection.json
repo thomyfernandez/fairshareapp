@@ -25,6 +25,11 @@
 			"key": "gastoId",
 			"value": "1",
 			"type": "string"
+		},
+		{
+			"key": "deudaId",
+			"value": "1",
+			"type": "string"
 		}
 	],
 	"item": [
@@ -557,6 +562,64 @@
 							]
 						},
 						"description": "Elimina un gasto existente por su identificador unico."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "6. Balances y Deudas",
+			"item": [
+				{
+					"name": "Obtener Balance Simplificado del Espacio",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/espacios/{{espacioId}}/balance",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"espacios",
+								"{{espacioId}}",
+								"balance"
+							]
+						},
+						"description": "Retorna la matriz simplificada de compensacion (quien le debe a quien) a partir de los gastos registrados en el espacio."
+					},
+					"response": []
+				},
+				{
+					"name": "Saldar Deuda (Total o Parcial)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"monto\": 25000.00,\n  \"liquidacionId\": 1\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/deudas/{{deudaId}}/saldar",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"deudas",
+								"{{deudaId}}",
+								"saldar"
+							]
+						},
+						"description": "Registra un pago total o parcial sobre una deuda pendiente. Si no se envia el campo 'monto', se asume la cancelacion total del saldo pendiente."
 					},
 					"response": []
 				}
