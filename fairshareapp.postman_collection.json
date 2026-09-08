@@ -2,7 +2,7 @@
 	"info": {
 		"_postman_id": "8a32d184-7e5d-4f81-8b27-4632128e3bfa",
 		"name": "FairShare API",
-		"description": "Coleccion oficial de endpoints REST de FairShare App para pruebas con Postman. Incluye modulos de Health, Usuarios, Espacios, Sueldos y Gastos.",
+		"description": "Coleccion oficial de endpoints REST de FairShare App para pruebas con Postman. Incluye modulos de Health, Usuarios, Espacios, Miembros, Sueldos, Gastos y Balances.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"variable": [
@@ -13,6 +13,11 @@
 		},
 		{
 			"key": "espacioId",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "usuarioId",
 			"value": "1",
 			"type": "string"
 		},
@@ -323,7 +328,129 @@
 			]
 		},
 		{
-			"name": "4. Sueldos",
+			"name": "4. Miembros",
+			"item": [
+				{
+					"name": "Unirse a Espacio con Codigo",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"codigo\": \"PALERMO-2026\",\n  \"usuarioId\": 2,\n  \"sueldoDeclarado\": 900000.00\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/espacios/{{espacioId}}/unirse",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"espacios",
+								"{{espacioId}}",
+								"unirse"
+							]
+						},
+						"description": "Une a un usuario al espacio validando que el codigo de invitacion coincida con el del espacio. El primer miembro en unirse recibe el rol ADMIN."
+					},
+					"response": []
+				},
+				{
+					"name": "Listar Miembros del Espacio",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/espacios/{{espacioId}}/miembros",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"espacios",
+								"{{espacioId}}",
+								"miembros"
+							]
+						},
+						"description": "Obtiene el listado de miembros pertenecientes a un espacio compartido."
+					},
+					"response": []
+				},
+				{
+					"name": "Actualizar Sueldo Declarado del Miembro",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"sueldoDeclarado\": 950000.00\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/espacios/{{espacioId}}/miembros/{{usuarioId}}/sueldo",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"espacios",
+								"{{espacioId}}",
+								"miembros",
+								"{{usuarioId}}",
+								"sueldo"
+							]
+						},
+						"description": "Registra o actualiza el sueldo mensual declarado del miembro, utilizado para el reparto proporcional de gastos."
+					},
+					"response": []
+				},
+				{
+					"name": "Asignar Rol al Miembro",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/espacios/{{espacioId}}/miembros/{{usuarioId}}/rol?rol=ADMIN",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"espacios",
+								"{{espacioId}}",
+								"miembros",
+								"{{usuarioId}}",
+								"rol"
+							],
+							"query": [
+								{
+									"key": "rol",
+									"value": "ADMIN",
+									"description": "Valores posibles: ADMIN, MIEMBRO"
+								}
+							]
+						},
+						"description": "Asigna o modifica el rol del miembro dentro del espacio."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "5. Sueldos",
 			"item": [
 				{
 					"name": "Crear Sueldo",
@@ -424,7 +551,7 @@
 			]
 		},
 		{
-			"name": "5. Gastos",
+			"name": "6. Gastos",
 			"item": [
 				{
 					"name": "Registrar Gasto en Espacio",
@@ -568,7 +695,7 @@
 			]
 		},
 		{
-			"name": "6. Balances y Deudas",
+			"name": "7. Balances y Deudas",
 			"item": [
 				{
 					"name": "Obtener Balance Simplificado del Espacio",
