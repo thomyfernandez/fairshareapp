@@ -4,6 +4,7 @@ import com.example.fairshareapp.model.dto.BalanceDTO;
 import com.example.fairshareapp.model.dto.DeudaDetalleDTO;
 import com.example.fairshareapp.model.dto.RegistrarPagoDTO;
 import com.example.fairshareapp.service.BalanceService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -52,7 +53,7 @@ public class BalanceController {
      */
     @PostMapping("/deudas/{id}/saldar")
     public ResponseEntity<DeudaDetalleDTO> saldarDeuda(@PathVariable Long id,
-                                                        @RequestBody(required = false) RegistrarPagoDTO dto) {
+                                                        @Valid @RequestBody(required = false) RegistrarPagoDTO dto) {
         DeudaDetalleDTO deuda = balanceService.registrarPago(id, dto);
         return ResponseEntity.ok(deuda);
     }

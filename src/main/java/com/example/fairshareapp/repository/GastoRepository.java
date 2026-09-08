@@ -2,8 +2,6 @@ package com.example.fairshareapp.repository;
 
 import com.example.fairshareapp.model.entity.Gasto;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
-
 import java.time.LocalDate;
 import java.util.List;
 
@@ -11,7 +9,6 @@ import java.util.List;
  * Repositorio Spring Data JPA para la entidad Gasto.
  * Proporciona metodos de acceso a datos, filtrado por espacio y periodos de tiempo.
  */
-@Repository
 public interface GastoRepository extends JpaRepository<Gasto, Long> {
 
     /**

@@ -168,4 +168,46 @@ class GastoControllerTest {
         mockMvc.perform(delete("/api/v1/gastos/99"))
                 .andExpect(status().isNotFound());
     }
+
+    /**
+     * Valida que el intento de registrar un gasto sin descripcion retorne codigo 400 Bad Request por validacion.
+     */
+    @Test
+    void registrarGasto_DescripcionVacia_RetornaBadRequest() throws Exception {
+        String jsonBody = """
+                {
+                    "descripcion": "",
+                    "monto": 100.0,
+                    "pagadorId": 1,
+                    "regla": "EQUITATIVA",
+                    "participantes": [{"usuarioId": 1}]
+                }
+                """;
+
+        mockMvc.perform(post("/api/v1/espacios/10/gastos")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonBody))
+                .andExpect(status().isBadRequest());
+    }
+
+    /**
+     * Valida que el intento de registrar un gasto con monto negativo retorne codigo 400 Bad Request.
+     */
+    @Test
+    void registrarGasto_MontoNegativo_RetornaBadRequest() throws Exception {
+        String jsonBody = """
+                {
+                    "descripcion": "Supermercado",
+                    "monto": -50.0,
+                    "pagadorId": 1,
+                    "regla": "EQUITATIVA",
+                    "participantes": [{"usuarioId": 1}]
+                }
+                """;
+
+        mockMvc.perform(post("/api/v1/espacios/10/gastos")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonBody))
+                .andExpect(status().isBadRequest());
+    }
 }

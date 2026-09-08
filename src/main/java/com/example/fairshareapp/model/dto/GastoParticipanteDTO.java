@@ -1,5 +1,8 @@
 package com.example.fairshareapp.model.dto;
 
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -18,10 +21,21 @@ import lombok.Setter;
 public class GastoParticipanteDTO {
 
     private Long id;
+
+    @NotNull(message = "El identificador del usuario participante es obligatorio")
     private Long usuarioId;
+
     private String usuarioNombre;
+
     private String usuarioEmail;
+
+    @DecimalMin(value = "0.0", inclusive = true, message = "El importe no puede ser negativo")
     private Double importe;
+
+    @DecimalMin(value = "0.0", inclusive = true, message = "El porcentaje no puede ser negativo")
+    @DecimalMax(value = "100.0", inclusive = true, message = "El porcentaje no puede superar 100")
     private Double porcentaje;
+
+    @DecimalMin(value = "0.0", inclusive = true, message = "El sueldo no puede ser negativo")
     private Double sueldo;
 }

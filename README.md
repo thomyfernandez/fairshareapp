@@ -144,6 +144,17 @@ docker compose up --build
 | `GET` | `/api/v1/espacios/{id}/balance` | Calcula y retorna la matriz simplificada de deudas pendientes del espacio |
 | `POST` | `/api/v1/deudas/{id}/saldar` | Registra el pago total o parcial de una deuda pendiente |
 
+### 7. Plantillas, Gastos Recurrentes y Favoritos
+| Metodo | Endpoint | Descripcion |
+| :--- | :--- | :--- |
+| `POST` | `/api/v1/espacios/{id}/favoritos` | Registra una plantilla de gasto favorita con frecuencia de ajuste y montos base/variable |
+| `GET` | `/api/v1/espacios/{id}/favoritos` | Lista las plantillas favoritas del espacio (soporta filtro `?soloVencidos=true`) |
+| `GET` | `/api/v1/espacios/{id}/favoritos/vencimientos` | Lista las alertas de vencimiento de ciclo tarifario que exigen actualizacion |
+| `GET` | `/api/v1/favoritos/{id}` | Obtiene el detalle de una plantilla favorita por su identificador |
+| `POST` | `/api/v1/favoritos/{id}/ejecutar` | Dispara el gasto rapido en 1 clic (bloquea y exige actualizacion si la tarifa vencio) |
+| `PUT` | `/api/v1/favoritos/{id}/actualizar-monto` | Actualiza montos base/variable y renueva la fecha de revision del ciclo |
+| `DELETE` | `/api/v1/favoritos/{id}` | Elimina una plantilla favorita del sistema |
+
 ---
 
 ## Pruebas con Postman

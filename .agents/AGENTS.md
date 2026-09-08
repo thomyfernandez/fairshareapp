@@ -31,6 +31,7 @@ This file provides guidelines and rules for AI coding assistants (Antigravity, G
   - Constants in `UPPER_SNAKE_CASE`.
 - **Error Handling**: Implement global exception handlers (`@RestControllerAdvice`) and return standardized HTTP responses.
 - **No Dead Code**: Remove commented-out code and unused imports.
+- **Spring Data JPA Repositories**: Do not redeclare standard CRUD methods (such as `findAll()`, `findById()`, `save()`, `deleteById()`, etc.) in repository interfaces that already extend `JpaRepository` or `CrudRepository`, unless modifying specific metadata or behavior (e.g. customizing transactions with `@Transactional`, entity fetch configurations with `@EntityGraph`, etc.). They are already provided by Spring Data JPA. Otherwise, only declare custom finder methods (e.g. `findBy...`), JPQL/native `@Query` methods, or specifications.
 
 ### 4. Frontend Best Practices (React & Vite)
 - **Functional Components & Modern Hooks**: Use functional components powered by React Hooks (`useState`, `useEffect`, `useCallback`, `useMemo`).
