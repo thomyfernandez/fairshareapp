@@ -1,4 +1,4 @@
-package com.example.fairshareapp.model.entity;
+package com.example.fairshareapp.model.enums;
 
 /**
  * Estado de una deuda registrada entre un deudor y un acreedor dentro de un espacio.

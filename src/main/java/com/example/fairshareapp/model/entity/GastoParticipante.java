@@ -16,6 +16,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
+
 /**
  * Entidad JPA que representa la participacion de un usuario especifico en un gasto.
  * Almacena la cuota parte o importe que le corresponde abonar segun la regla de division activa.
@@ -43,8 +45,8 @@ public class GastoParticipante {
     private Usuario usuario;
 
     @Column(nullable = false)
-    private Double importe;
+    private BigDecimal importe;
 
     @Column
-    private Double porcentaje;
+    private BigDecimal porcentaje;
 }

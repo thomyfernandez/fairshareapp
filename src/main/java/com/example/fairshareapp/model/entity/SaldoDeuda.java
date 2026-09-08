@@ -1,5 +1,6 @@
 package com.example.fairshareapp.model.entity;
 
+import com.example.fairshareapp.model.enums.EstadoDeuda;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -16,6 +17,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.math.BigDecimal;
 
 /**
  * Entidad JPA que representa la deuda simplificada de un usuario (deudor) hacia otro (acreedor)
@@ -53,24 +56,19 @@ public class SaldoDeuda {
      * la porcion que ya fue pagada.
      */
     @Column(name = "monto_original", nullable = false)
-    private Double montoOriginal;
+    private BigDecimal montoOriginal;
 
     /**
      * Monto actualmente pendiente de pago. Disminuye a medida que se registran pagos
      * mediante el endpoint de saldar deuda.
      */
     @Column(nullable = false)
-    private Double monto;
+    private BigDecimal monto;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private EstadoDeuda estado;
 
-    /**
-     * Identificador de la liquidacion asociada a esta deuda, si corresponde.
-     * Se guarda como referencia debil (sin relacion JPA) porque la entidad Liquidacion
-     * es responsabilidad de otro modulo del proyecto y no debe modificarse desde aqui.
-     */
     @Column(name = "liquidacion_id")
     private Long liquidacionId;
 }

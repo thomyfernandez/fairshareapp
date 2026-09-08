@@ -8,7 +8,7 @@ import com.example.fairshareapp.model.dto.GastoParticipanteDTO;
 import com.example.fairshareapp.model.entity.Categoria;
 import com.example.fairshareapp.model.entity.Espacio;
 import com.example.fairshareapp.model.entity.Gasto;
-import com.example.fairshareapp.model.entity.ReglaDivision;
+import com.example.fairshareapp.model.enums.ReglaDivision;
 import com.example.fairshareapp.model.entity.Usuario;
 import com.example.fairshareapp.repository.CategoriaRepository;
 import com.example.fairshareapp.repository.EspacioRepository;

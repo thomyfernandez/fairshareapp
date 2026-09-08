@@ -1,6 +1,6 @@
 package com.example.fairshareapp.repository;
 
-import com.example.fairshareapp.model.entity.EstadoDeuda;
+import com.example.fairshareapp.model.enums.EstadoDeuda;
 import com.example.fairshareapp.model.entity.SaldoDeuda;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;

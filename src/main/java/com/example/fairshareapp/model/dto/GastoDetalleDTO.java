@@ -1,12 +1,13 @@
 package com.example.fairshareapp.model.dto;
 
-import com.example.fairshareapp.model.entity.ReglaDivision;
+import com.example.fairshareapp.model.enums.ReglaDivision;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -22,7 +23,7 @@ public class GastoDetalleDTO {
 
     private Long id;
     private String descripcion;
-    private Double monto;
+    private BigDecimal monto;
     private LocalDate fecha;
     private Long espacioId;
     private String espacioNombre;
