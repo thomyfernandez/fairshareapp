@@ -67,6 +67,21 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Maneja errores de validacion en datos de entrada de solicitudes anotadas con @Valid.
+     *
+     * @param ex Excepcion de validacion capturada.
+     * @return Respuesta con codigo HTTP 400 Bad Request y detalle del primer error.
+     */
+    @ExceptionHandler(org.springframework.web.bind.MethodArgumentNotValidException.class)
+    public ResponseEntity<String> handleValidationExceptions(org.springframework.web.bind.MethodArgumentNotValidException ex) {
+        String mensaje = ex.getBindingResult().getFieldErrors().stream()
+                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                .findFirst()
+                .orElse("Error en los datos de entrada");
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(mensaje);
+    }
+
+    /**
      * Maneja cualquier excepcion generica no prevista en los controladores.
      *
      * @param ex Excepcion capturada.

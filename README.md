@@ -1,93 +1,137 @@
-# FairShare App 🚀
+# FairShare App
 
-Aplicación web desarrollada con **Spring Boot (Java)** en el Backend y **React (Vite)** en el Frontend, integrada bajo una arquitectura Monorepo limpia y escalable.
+Aplicacion web desarrollada con Spring Boot (Java) en el Backend y React (Vite) en el Frontend, integrada bajo una arquitectura Monorepo limpia y escalable para la gestion y division equitativa de gastos compartidos.
 
 ---
 
-## 🏛️ Arquitectura del Proyecto
+## Arquitectura del Proyecto
 
-Este proyecto adopta una **Arquitectura Monorepo Desacoplada (Decoupled Monorepo)**:
+Este proyecto adopta una Arquitectura Monorepo Desacoplada (Decoupled Monorepo):
 
 ```text
 fairshareapp/
-├── frontend/                  # Aplicación Frontend (React + Vite)
-│   ├── src/                   # Componentes UI, estilos y lógica en React
-│   ├── public/                # Recursos estáticos de React
+├── frontend/                  # Aplicacion Frontend (React + Vite)
+│   ├── src/                   # Componentes UI, estilos y logica en React
+│   ├── public/                # Recursos estaticos de React
 │   ├── package.json           # Dependencias de npm
-│   └── vite.config.js         # Configuración de Vite (incluye proxy para /api)
-├── src/                       # Aplicación Backend (Spring Boot + Java)
-│   └── main/
-│       ├── java/com/example/fairshareapp/
-│       │   ├── config/        # Configuraciones globales (CORS, etc.)
-│       │   ├── controller/    # Controladores REST API (/api/*)
-│       │   └── FairshareappApplication.java
-│       └── resources/         # Archivos de configuración de Spring Boot
-├── pom.xml                    # Configuración de Maven (incluye frontend-maven-plugin)
-└── README.md                  # Documentación del proyecto
+│   └── vite.config.js         # Configuracion de Vite (incluye proxy para /api)
+├── src/                       # Aplicacion Backend (Spring Boot + Java)
+│   ├── main/
+│   │   ├── java/com/example/fairshareapp/
+│   │   │   ├── config/        # Configuraciones globales (CORS, Seguridad)
+│   │   │   ├── controller/    # Controladores REST API (Api, Usuario, Gasto)
+│   │   │   ├── exception/     # Manejo global de excepciones
+│   │   │   ├── model/         # Entidades JPA y DTOs
+│   │   │   ├── repository/    # Repositorios Spring Data JPA
+│   │   │   ├── service/       # Servicios con logica transaccional
+│   │   │   └── FairshareappApplication.java
+│   │   └── resources/         # Archivos de configuracion de Spring Boot
+│   └── test/                  # Pruebas unitarias y de integracion
+├── fairshareapp.postman_collection.json # Coleccion completa para importar en Postman
+├── pom.xml                    # Configuracion de Maven
+└── README.md                  # Documentacion del proyecto
 ```
 
-### Principales aspectos arquitectónicos:
-1. **Desacoplamiento Limpio**: El frontend en React se encuentra dentro de su propio directorio `/frontend` con sus propias dependencias y scripts de `npm`, permitiendo a los desarrolladores de frontend trabajar sin interferir con la estructura del proyecto en Java.
-2. **Desarrollo Rápido con Proxy (HMR)**: Durante el desarrollo local, Vite ejecuta el servidor de frontend en `http://localhost:5173` y redirige de manera transparente cualquier petición `/api/*` al servidor Spring Boot en `http://localhost:8080`, eliminando problemas de CORS y manteniendo endpoints relativos en el código de React.
-3. **Controladores REST en el Backend**: Los endpoints están aislados bajo la ruta `/api/*` mediante un `ApiController` que expone respuestas estructuradas en formato JSON.
-4. **Empaquetado Unificado para Producción**: Se integró `frontend-maven-plugin` y `maven-resources-plugin` en el `pom.xml`. Al ejecutar `mvn clean package`, Maven compila automáticamente el frontend React (`npm run build`) e inyecta los archivos de distribución en `target/classes/static`. Esto genera un **único archivo `.jar` ejecutable** que contiene tanto el backend como el frontend.
+### Principales aspectos arquitectonicos:
+1. **Desacoplamiento Limpio**: El frontend en React se encuentra dentro de su propio directorio `/frontend` con sus propias dependencias y scripts de `npm`.
+2. **Desarrollo Rapido con Proxy (HMR)**: Durante el desarrollo local, Vite ejecuta el servidor de frontend en `http://localhost:5173` y redirige peticiones `/api/*` al servidor Spring Boot en `http://localhost:8080`.
+3. **Division de Gastos Inteligente**: Modulo de calculo de participaciones con multiples reglas (Equitativa, Proporcional a Ingresos, Participacion Parcial y Personalizada).
+4. **Empaquetado Unificado para Produccion**: Con `frontend-maven-plugin` y `maven-resources-plugin`, al ejecutar `mvn clean package` se compila el frontend y se empaqueta en un unico archivo `.jar` ejecutable.
 
 ---
 
-## 🛠️ Guía de Ejecución
+## Guia de Ejecucion
 
-### Opción A: Modo Desarrollo (Recomendado)
+### Opcion A: Modo Desarrollo (Recomendado)
 
-En este modo tenés la velocidad de compilación instantánea de Vite (HMR) y el backend corriendo en paralelo.
+1. **Iniciar la base de datos (SQL Server en Docker):**
+   ```bash
+   docker compose up -d sqlserver
+   ```
 
-1. **Iniciar el Backend (Spring Boot):**
+2. **Iniciar el Backend (Spring Boot):**
    ```bash
    mvn spring-boot:run
    ```
-   *(El backend estará disponible en `http://localhost:8080`)*
+   *(El backend estara disponible en `http://localhost:8080`)*
 
-2. **Iniciar el Frontend (React):**
-   Abre una segunda terminal y ejecuta:
+3. **Iniciar el Frontend (React):**
    ```bash
    cd frontend
    npm run dev
    ```
-   *(El frontend estará disponible en `http://localhost:5173`)*
+   *(El frontend estara disponible en `http://localhost:5173`)*
 
 ---
 
-### Opción B: Modo Producción (Single JAR)
-
-Compila el frontend y backend en un único ejecutable.
+### Opcion B: Modo Produccion (Single JAR)
 
 1. **Generar el ejecutable:**
    ```bash
    mvn clean package
    ```
 
-2. **Ejecutar la aplicación completa:**
+2. **Ejecutar la aplicacion completa:**
    ```bash
    java -jar target/fairshareapp-0.0.1-SNAPSHOT.jar
    ```
 
-3. Abrí **`http://localhost:8080`** en tu navegador para ver la aplicación web completa servida directamente por Spring Boot.
+3. Abrir `http://localhost:8080` en el navegador.
 
 ---
 
-### Opcion Docker
+### Opcion C: Entorno Completo con Docker Compose
 
-1. Tener docker instalado y tirar el comando
-   ```bash
-   docker compose up --build
-   ```
-   
-2. Abrí **`http://localhost:8080`** en tu navegador para ver la aplicación web completa servida directamente por Spring Boot.
+```bash
+docker compose up --build
+```
 
 ---
 
-## 🔌 Endpoints REST Disponibles
+## Endpoints REST Disponibles
 
-| Método | Endpoint | Descripción |
+### 1. General & Health
+| Metodo | Endpoint | Descripcion |
 | :--- | :--- | :--- |
 | `GET` | `/api/status` | Retorna el estado del servicio y timestamp actual |
-| `GET` | `/api/hello` | Retorna un mensaje de confirmación de conexión desde Spring Boot |
+| `GET` | `/api/hello` | Retorna mensaje de confirmacion de conexion |
+
+### 2. Gestion de Usuarios
+| Metodo | Endpoint | Descripcion |
+| :--- | :--- | :--- |
+| `POST` | `/api/usuario/registro` | Registra un nuevo usuario en la base de datos |
+| `POST` | `/api/usuario/login` | Valida credenciales de acceso de un usuario |
+| `GET` | `/api/usuario/get` | Retorna el listado completo de usuarios |
+
+### 3. Gestion de Espacios
+| Metodo | Endpoint | Descripcion |
+| :--- | :--- | :--- |
+| `POST` | `/api/v1/espacios` | Crea un nuevo espacio compartido con regla de reparto y presupuesto base |
+| `GET` | `/api/v1/espacios/{id}` | Obtiene el detalle consolidado de un espacio por su identificador |
+| `PUT` | `/api/v1/espacios/{id}` | Actualiza datos del espacio, incluyendo regla de distribucion y presupuesto |
+| `GET` | `/api/v1/espacios` | Lista todos los espacios compartidos registrados |
+| `PATCH` | `/api/v1/espacios/{id}/regla-distribucion` | Modifica la regla de distribucion (50/50 vs. Proporcional) |
+| `PATCH` | `/api/v1/espacios/{id}/presupuesto-base` | Fija o actualiza el presupuesto base del espacio |
+
+### 4. Gestion de Sueldos
+| Metodo | Endpoint | Descripcion |
+| :--- | :--- | :--- |
+| `POST` | `/api/sueldos` | Registra el sueldo de un usuario y sincroniza la tasa proporcional |
+| `GET` | `/api/sueldos` | Lista todos los sueldos registrados en el sistema |
+| `PUT` | `/api/sueldos/{id}` | Actualiza monto, periodicidad o tipo de sueldo |
+| `DELETE` | `/api/sueldos/{id}` | Elimina un registro de sueldo |
+
+### 5. Gestion de Gastos
+| Metodo | Endpoint | Descripcion |
+| :--- | :--- | :--- |
+| `POST` | `/api/v1/espacios/{id}/gastos` | Registra un gasto individual con calculo de participantes |
+| `POST` | `/api/v1/espacios/{id}/gastos/lote` | Registra un conjunto de gastos de forma atomica |
+| `GET` | `/api/v1/espacios/{id}/gastos` | Lista los gastos de un espacio (opcion de filtrar por `desde` y `hasta`) |
+| `GET` | `/api/v1/gastos/{id}` | Obtiene el detalle de un gasto y el desglose por participante |
+| `DELETE` | `/api/v1/gastos/{id}` | Elimina un gasto del sistema |
+
+---
+
+## Pruebas con Postman
+
+El proyecto incluye el archivo `fairshareapp.postman_collection.json` en la raiz del repositorio. Puede ser importado directamente en Postman para probar todos los endpoints disponibles.

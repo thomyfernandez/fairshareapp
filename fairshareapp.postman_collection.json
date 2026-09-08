@@ -1,0 +1,566 @@
+{
+	"info": {
+		"_postman_id": "8a32d184-7e5d-4f81-8b27-4632128e3bfa",
+		"name": "FairShare API",
+		"description": "Coleccion oficial de endpoints REST de FairShare App para pruebas con Postman. Incluye modulos de Health, Usuarios, Espacios, Sueldos y Gastos.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080",
+			"type": "string"
+		},
+		{
+			"key": "espacioId",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "sueldoId",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "gastoId",
+			"value": "1",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "1. General & Health",
+			"item": [
+				{
+					"name": "Estado del Servicio (Status)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/status",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"status"
+							]
+						},
+						"description": "Retorna el estado UP del servicio, nombre de la aplicacion y timestamp actual."
+					},
+					"response": []
+				},
+				{
+					"name": "Prueba de Conexion (Hello)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/hello",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"hello"
+							]
+						},
+						"description": "Retorna mensaje de confirmacion de conectividad con el backend."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "2. Usuarios",
+			"item": [
+				{
+					"name": "Registrar Usuario",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombre\": \"Juan\",\n  \"apellido\": \"Perez\",\n  \"email\": \"juan.perez@example.com\",\n  \"contra\": \"password123\",\n  \"usuario\": \"juanperez\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/usuario/registro",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"usuario",
+								"registro"
+							]
+						},
+						"description": "Registra un nuevo usuario en la base de datos."
+					},
+					"response": []
+				},
+				{
+					"name": "Login de Usuario",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"juan.perez@example.com\",\n  \"contra\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/usuario/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"usuario",
+								"login"
+							]
+						},
+						"description": "Autentica las credenciales de un usuario existente."
+					},
+					"response": []
+				},
+				{
+					"name": "Listar Todos los Usuarios",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/usuario/get",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"usuario",
+								"get"
+							]
+						},
+						"description": "Obtiene la lista completa de usuarios registrados."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "3. Espacios",
+			"item": [
+				{
+					"name": "Crear Espacio Compartido",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombre\": \"Departamento Palermo\",\n  \"descripcion\": \"Gastos mensuales de convivencia y servicios\",\n  \"codigo\": \"PALERMO-2026\",\n  \"tipo\": \"HOGAR\",\n  \"reglaReparto\": \"PROPORCIONAL\",\n  \"presupuestoBase\": 350000.00\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/espacios",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"espacios"
+							]
+						},
+						"description": "Crea un nuevo espacio compartido configurando su tipo (HOGAR, VIAJE, PAREJA, TRABAJO, OTRO), regla de reparto inicial (CINCUENTA_CINCUENTA o PROPORCIONAL) y presupuesto base."
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener Espacio por ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/espacios/{{espacioId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"espacios",
+								"{{espacioId}}"
+							]
+						},
+						"description": "Recupera la informacion detallada y estado consolidado de un espacio."
+					},
+					"response": []
+				},
+				{
+					"name": "Actualizar Espacio",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombre\": \"Departamento Palermo Actualizado\",\n  \"descripcion\": \"Gastos comunes y extraordinarios\",\n  \"codigo\": \"PALERMO-2026-REV\",\n  \"tipo\": \"HOGAR\",\n  \"reglaReparto\": \"CINCUENTA_CINCUENTA\",\n  \"presupuestoBase\": 400000.00\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/espacios/{{espacioId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"espacios",
+								"{{espacioId}}"
+							]
+						},
+						"description": "Actualiza la configuracion del espacio incluyendo regla de reparto y presupuesto base."
+					},
+					"response": []
+				},
+				{
+					"name": "Listar Espacios",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/espacios",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"espacios"
+							]
+						},
+						"description": "Lista todos los espacios compartidos registrados."
+					},
+					"response": []
+				},
+				{
+					"name": "Editar Regla de Distribucion",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/espacios/{{espacioId}}/regla-distribucion?reglaReparto=CINCUENTA_CINCUENTA",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"espacios",
+								"{{espacioId}}",
+								"regla-distribucion"
+							],
+							"query": [
+								{
+									"key": "reglaReparto",
+									"value": "CINCUENTA_CINCUENTA",
+									"description": "Valores posibles: CINCUENTA_CINCUENTA, PROPORCIONAL"
+								}
+							]
+						},
+						"description": "Modifica puntualmente la regla de reparto aplicada a los gastos del espacio."
+					},
+					"response": []
+				},
+				{
+					"name": "Fijar Presupuesto Base",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/espacios/{{espacioId}}/presupuesto-base?presupuestoBase=450000.00",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"espacios",
+								"{{espacioId}}",
+								"presupuesto-base"
+							],
+							"query": [
+								{
+									"key": "presupuestoBase",
+									"value": "450000.00",
+									"description": "Nuevo importe monetario del presupuesto base"
+								}
+							]
+						},
+						"description": "Fija o reajusta el presupuesto base estimado del espacio."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "4. Sueldos",
+			"item": [
+				{
+					"name": "Crear Sueldo",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"monto\": 1200000.00,\n  \"tipo\": \"FIJO\",\n  \"frecuencia\": \"MENSUAL\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/sueldos",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"sueldos"
+							]
+						},
+						"description": "Registra el sueldo para calcular las tasas proporcionales en los repartos de gastos."
+					},
+					"response": []
+				},
+				{
+					"name": "Listar Sueldos",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/sueldos",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"sueldos"
+							]
+						},
+						"description": "Obtiene la lista de todos los sueldos registrados."
+					},
+					"response": []
+				},
+				{
+					"name": "Actualizar Sueldo por ID",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"monto\": 1350000.00,\n  \"tipo\": \"FIJO\",\n  \"frecuencia\": \"MENSUAL\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/sueldos/{{sueldoId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"sueldos",
+								"{{sueldoId}}"
+							]
+						},
+						"description": "Actualiza el monto, tipo o frecuencia de un registro de sueldo."
+					},
+					"response": []
+				},
+				{
+					"name": "Eliminar Sueldo por ID",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/sueldos/{{sueldoId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"sueldos",
+								"{{sueldoId}}"
+							]
+						},
+						"description": "Elimina un sueldo por su identificador unico."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "5. Gastos",
+			"item": [
+				{
+					"name": "Registrar Gasto en Espacio",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"descripcion\": \"Compra de supermercado semanal\",\n  \"monto\": 65000.00,\n  \"fecha\": \"2026-09-08\",\n  \"pagadorId\": 1,\n  \"categoriaId\": 1,\n  \"regla\": \"EQUITATIVA\",\n  \"participantes\": [\n    {\n      \"usuarioId\": 1,\n      \"usuarioNombre\": \"Juan Perez\",\n      \"usuarioEmail\": \"juan.perez@example.com\"\n    },\n    {\n      \"usuarioId\": 2,\n      \"usuarioNombre\": \"Maria Lopez\",\n      \"usuarioEmail\": \"maria.lopez@example.com\"\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/espacios/{{espacioId}}/gastos",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"espacios",
+								"{{espacioId}}",
+								"gastos"
+							]
+						},
+						"description": "Registra un nuevo gasto asociado a un espacio con desglose automatico segun la regla elegida (EQUITATIVA, PROPORCIONAL_INGRESOS, PARTICIPACION_PARCIAL, PERSONALIZADA)."
+					},
+					"response": []
+				},
+				{
+					"name": "Registrar Lote de Gastos",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "[\n  {\n    \"descripcion\": \"Servicio de Internet\",\n    \"monto\": 25000.00,\n    \"fecha\": \"2026-09-01\",\n    \"pagadorId\": 1,\n    \"categoriaId\": 2,\n    \"regla\": \"EQUITATIVA\",\n    \"participantes\": [\n      {\n        \"usuarioId\": 1,\n        \"usuarioNombre\": \"Juan Perez\",\n        \"usuarioEmail\": \"juan.perez@example.com\"\n      },\n      {\n        \"usuarioId\": 2,\n        \"usuarioNombre\": \"Maria Lopez\",\n        \"usuarioEmail\": \"maria.lopez@example.com\"\n      }\n    ]\n  },\n  {\n    \"descripcion\": \"Factura de Electricidad\",\n    \"monto\": 42000.00,\n    \"fecha\": \"2026-09-05\",\n    \"pagadorId\": 2,\n    \"categoriaId\": 2,\n    \"regla\": \"EQUITATIVA\",\n    \"participantes\": [\n      {\n        \"usuarioId\": 1,\n        \"usuarioNombre\": \"Juan Perez\",\n        \"usuarioEmail\": \"juan.perez@example.com\"\n      },\n      {\n        \"usuarioId\": 2,\n        \"usuarioNombre\": \"Maria Lopez\",\n        \"usuarioEmail\": \"maria.lopez@example.com\"\n      }\n    ]\n  }\n]"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/espacios/{{espacioId}}/gastos/lote",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"espacios",
+								"{{espacioId}}",
+								"gastos",
+								"lote"
+							]
+						},
+						"description": "Registra un conjunto de gastos de forma atomica en una sola transaccion."
+					},
+					"response": []
+				},
+				{
+					"name": "Listar Gastos por Espacio y Periodo",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/espacios/{{espacioId}}/gastos?desde=2026-09-01&hasta=2026-09-30",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"espacios",
+								"{{espacioId}}",
+								"gastos"
+							],
+							"query": [
+								{
+									"key": "desde",
+									"value": "2026-09-01",
+									"description": "Fecha inicial de filtro (opcional)"
+								},
+								{
+									"key": "hasta",
+									"value": "2026-09-30",
+									"description": "Fecha final de filtro (opcional)"
+								}
+							]
+						},
+						"description": "Obtiene la lista de gastos registrados en un espacio, filtrando opcionalmente por rango de fechas."
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener Detalle de Gasto por ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/gastos/{{gastoId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"gastos",
+								"{{gastoId}}"
+							]
+						},
+						"description": "Obtiene la informacion consolidada de un gasto y el desglose de participacion por usuario."
+					},
+					"response": []
+				},
+				{
+					"name": "Eliminar Gasto por ID",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/gastos/{{gastoId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"gastos",
+								"{{gastoId}}"
+							]
+						},
+						"description": "Elimina un gasto existente por su identificador unico."
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
