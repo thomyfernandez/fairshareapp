@@ -130,6 +130,12 @@ docker compose up --build
 | `GET` | `/api/v1/gastos/{id}` | Obtiene el detalle de un gasto y el desglose por participante |
 | `DELETE` | `/api/v1/gastos/{id}` | Elimina un gasto del sistema |
 
+### 6. Motor de Balances y Deudas
+| Metodo | Endpoint | Descripcion |
+| :--- | :--- | :--- |
+| `GET` | `/api/v1/espacios/{id}/balance` | Calcula y retorna la matriz simplificada de deudas pendientes del espacio |
+| `POST` | `/api/v1/deudas/{id}/saldar` | Registra el pago total o parcial de una deuda pendiente |
+
 ---
 
 ## Pruebas con Postman
