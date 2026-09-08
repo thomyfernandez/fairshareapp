@@ -17,8 +17,10 @@ This file provides guidelines and rules for AI coding assistants (Antigravity, G
 - Git command usage must be strictly read-only (`git status`, `git diff`, `git log`, `git show`) unless instructed otherwise.
 
 ### 2. Documentation & Commenting Standards
+- **README Maintenance**: The `README.md` file must be kept continuously updated whenever new features, endpoints, entities, configurations, or relevant changes are introduced to the project.
+- **Postman Collection Maintenance**: The `fairshareapp.postman_collection.json` file must be kept continuously updated whenever new endpoints, request/response payloads, query parameters, or modifications to existing REST APIs are introduced to the project.
+- **Strictly No Emojis**: The use of any type of emoji in code, comments, system messages, documentation, and specifically in the `README.md` file is strictly prohibited. Do not use emojis under any circumstances.
 - **Method & Code Explanations**: A descriptive comment must be added prior to each created method explaining its general purpose and functionality. Inside the method, comment only key or complex lines that require clarification, avoiding trivial line-by-line comments.
-- **No Emojis**: The use of any type of emoji in code, comments, system messages, or documentation is strictly prohibited.
 - **Comment Language**: All code comments and explanations must be written exclusively in Spanish.
 
 ### 3. Backend Best Practices (Java & Spring Boot)

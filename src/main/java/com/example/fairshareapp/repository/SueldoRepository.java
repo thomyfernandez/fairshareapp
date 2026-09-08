@@ -10,13 +10,9 @@ import java.util.List;
 
 @Repository
 public interface SueldoRepository extends JpaRepository<Sueldo, Long> {
-    // Permite buscar todos los sueldos de un usuario específico
+    // Permite buscar todos los sueldos de un usuario especifico
     List<Sueldo> findByUsuario_Id(Long usuarioId);
 
-    // buscar todos
+    // Buscar todos los sueldos
     List<Sueldo> findAll();
-
-    // buscar Todos y devolverlos en lista de SueldoResponse
-    List<SueldoResponse> findAllResponse();
-
 }
