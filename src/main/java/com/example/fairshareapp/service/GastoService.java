@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -79,7 +80,7 @@ public class GastoService {
                     .orElseThrow(() -> new RecursoNoEncontradoException("Categoria no encontrada con id: " + dto.getCategoriaId()));
         }
 
-        LocalDate fechaGasto = dto.getFecha() != null ? dto.getFecha() : LocalDate.now();
+        LocalDate fechaGasto = dto.getFecha() != null ? dto.getFecha() : LocalDate.now(ZoneId.systemDefault());
         ReglaDivision regla = dto.getRegla() != null ? dto.getRegla() : ReglaDivision.EQUITATIVA;
 
         Gasto nuevoGasto = Gasto.builder()
@@ -350,70 +351,104 @@ public class GastoService {
         }
 
         BigDecimal montoTotalBD = BigDecimal.valueOf(montoTotal);
-        List<GastoParticipante> resultado = new ArrayList<>();
 
         if (usaPorcentajes) {
-            BigDecimal sumaPorcentajes = BigDecimal.ZERO;
-            for (GastoParticipanteDTO dto : dtos) {
-                if (dto.getPorcentaje() == null || dto.getPorcentaje() < 0) {
-                    throw new ReglaInvalidaException("Cada participante debe contar con un porcentaje valido no negativo");
-                }
-                sumaPorcentajes = sumaPorcentajes.add(BigDecimal.valueOf(dto.getPorcentaje()));
+            return calcularDivisionPorPorcentajes(gasto, montoTotalBD, usuarios, dtos);
+        }
+
+        return calcularDivisionPorImportes(gasto, montoTotalBD, usuarios, dtos);
+    }
+
+    /**
+     * Calcula las participaciones personalizadas cuando la regla se define mediante porcentajes.
+     *
+     * @param gasto Entidad Gasto asociada.
+     * @param montoTotalBD Monto total del gasto como BigDecimal.
+     * @param usuarios Lista de usuarios participantes.
+     * @param dtos Lista de DTOs con los porcentajes definidos.
+     * @return Lista de participaciones calculadas y ajustadas.
+     */
+    private List<GastoParticipante> calcularDivisionPorPorcentajes(Gasto gasto,
+                                                                  BigDecimal montoTotalBD,
+                                                                  List<Usuario> usuarios,
+                                                                  List<GastoParticipanteDTO> dtos) {
+        BigDecimal sumaPorcentajes = BigDecimal.ZERO;
+        for (GastoParticipanteDTO dto : dtos) {
+            if (dto.getPorcentaje() == null || dto.getPorcentaje() < 0) {
+                throw new ReglaInvalidaException("Cada participante debe contar con un porcentaje valido no negativo");
             }
+            sumaPorcentajes = sumaPorcentajes.add(BigDecimal.valueOf(dto.getPorcentaje()));
+        }
 
-            // Validar que la suma de porcentajes coincida con el 100% con tolerancia minima
-            if (sumaPorcentajes.subtract(BigDecimal.valueOf(100.0)).abs().compareTo(BigDecimal.valueOf(0.01)) > 0) {
-                throw new ReglaInvalidaException("La suma de porcentajes debe ser exactamente 100%. Suma actual: " + sumaPorcentajes);
+        // Validar que la suma de porcentajes coincida con el 100% con tolerancia minima
+        if (sumaPorcentajes.subtract(BigDecimal.valueOf(100.0)).abs().compareTo(BigDecimal.valueOf(0.01)) > 0) {
+            throw new ReglaInvalidaException("La suma de porcentajes debe ser exactamente 100%. Suma actual: " + sumaPorcentajes);
+        }
+
+        List<GastoParticipante> resultado = new ArrayList<>();
+        BigDecimal sumaImportes = BigDecimal.ZERO;
+        for (int i = 0; i < usuarios.size(); i++) {
+            BigDecimal porcentaje = BigDecimal.valueOf(dtos.get(i).getPorcentaje());
+            BigDecimal importe = montoTotalBD.multiply(porcentaje)
+                    .divide(BigDecimal.valueOf(100.0), 2, RoundingMode.HALF_UP);
+
+            sumaImportes = sumaImportes.add(importe);
+            resultado.add(GastoParticipante.builder()
+                    .gasto(gasto)
+                    .usuario(usuarios.get(i))
+                    .importe(importe.doubleValue())
+                    .porcentaje(porcentaje.doubleValue())
+                    .build());
+        }
+
+        BigDecimal diferencia = montoTotalBD.subtract(sumaImportes);
+        if (diferencia.compareTo(BigDecimal.ZERO) != 0 && !resultado.isEmpty()) {
+            GastoParticipante primerParticipante = resultado.get(0);
+            primerParticipante.setImporte(BigDecimal.valueOf(primerParticipante.getImporte()).add(diferencia).doubleValue());
+        }
+
+        return resultado;
+    }
+
+    /**
+     * Calcula las participaciones personalizadas cuando la regla se define mediante importes fijos.
+     *
+     * @param gasto Entidad Gasto asociada.
+     * @param montoTotalBD Monto total del gasto como BigDecimal.
+     * @param usuarios Lista de usuarios participantes.
+     * @param dtos Lista de DTOs con los importes definidos.
+     * @return Lista de participaciones calculadas.
+     */
+    private List<GastoParticipante> calcularDivisionPorImportes(Gasto gasto,
+                                                               BigDecimal montoTotalBD,
+                                                               List<Usuario> usuarios,
+                                                               List<GastoParticipanteDTO> dtos) {
+        BigDecimal sumaImportes = BigDecimal.ZERO;
+        for (GastoParticipanteDTO dto : dtos) {
+            if (dto.getImporte() == null || dto.getImporte() < 0) {
+                throw new ReglaInvalidaException("Cada participante debe contar con un importe fijo valido no negativo");
             }
+            sumaImportes = sumaImportes.add(BigDecimal.valueOf(dto.getImporte()));
+        }
 
-            BigDecimal sumaImportes = BigDecimal.ZERO;
-            for (int i = 0; i < usuarios.size(); i++) {
-                BigDecimal porcentaje = BigDecimal.valueOf(dtos.get(i).getPorcentaje());
-                BigDecimal importe = montoTotalBD.multiply(porcentaje)
-                        .divide(BigDecimal.valueOf(100.0), 2, RoundingMode.HALF_UP);
+        // Validar que la suma de importes equivalga exactamente al total
+        if (sumaImportes.subtract(montoTotalBD).abs().compareTo(BigDecimal.valueOf(0.01)) > 0) {
+            throw new ReglaInvalidaException("La suma de importes fijados (" + sumaImportes +
+                    ") no coincide con el monto total (" + montoTotalBD + ")");
+        }
 
-                sumaImportes = sumaImportes.add(importe);
-                resultado.add(GastoParticipante.builder()
-                        .gasto(gasto)
-                        .usuario(usuarios.get(i))
-                        .importe(importe.doubleValue())
-                        .porcentaje(porcentaje.doubleValue())
-                        .build());
-            }
+        List<GastoParticipante> resultado = new ArrayList<>();
+        for (int i = 0; i < usuarios.size(); i++) {
+            BigDecimal importe = BigDecimal.valueOf(dtos.get(i).getImporte());
+            BigDecimal porcentaje = importe.multiply(BigDecimal.valueOf(100.0))
+                    .divide(montoTotalBD, 2, RoundingMode.HALF_UP);
 
-            BigDecimal diferencia = montoTotalBD.subtract(sumaImportes);
-            if (diferencia.compareTo(BigDecimal.ZERO) != 0 && !resultado.isEmpty()) {
-                GastoParticipante primerParticipante = resultado.get(0);
-                primerParticipante.setImporte(BigDecimal.valueOf(primerParticipante.getImporte()).add(diferencia).doubleValue());
-            }
-
-        } else {
-            BigDecimal sumaImportes = BigDecimal.ZERO;
-            for (GastoParticipanteDTO dto : dtos) {
-                if (dto.getImporte() == null || dto.getImporte() < 0) {
-                    throw new ReglaInvalidaException("Cada participante debe contar con un importe fijo valido no negativo");
-                }
-                sumaImportes = sumaImportes.add(BigDecimal.valueOf(dto.getImporte()));
-            }
-
-            // Validar que la suma de importes equivalga exactamente al total
-            if (sumaImportes.subtract(montoTotalBD).abs().compareTo(BigDecimal.valueOf(0.01)) > 0) {
-                throw new ReglaInvalidaException("La suma de importes fijados (" + sumaImportes +
-                        ") no coincide con el monto total (" + montoTotalBD + ")");
-            }
-
-            for (int i = 0; i < usuarios.size(); i++) {
-                BigDecimal importe = BigDecimal.valueOf(dtos.get(i).getImporte());
-                BigDecimal porcentaje = importe.multiply(BigDecimal.valueOf(100.0))
-                        .divide(montoTotalBD, 2, RoundingMode.HALF_UP);
-
-                resultado.add(GastoParticipante.builder()
-                        .gasto(gasto)
-                        .usuario(usuarios.get(i))
-                        .importe(importe.doubleValue())
-                        .porcentaje(porcentaje.doubleValue())
-                        .build());
-            }
+            resultado.add(GastoParticipante.builder()
+                    .gasto(gasto)
+                    .usuario(usuarios.get(i))
+                    .importe(importe.doubleValue())
+                    .porcentaje(porcentaje.doubleValue())
+                    .build());
         }
 
         return resultado;

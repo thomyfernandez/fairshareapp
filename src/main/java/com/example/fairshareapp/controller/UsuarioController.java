@@ -18,20 +18,20 @@ public class UsuarioController {
     private final UsuarioService usuarioService;
 
     @PostMapping("/registro")
-    public ResponseEntity<String> Registro(@RequestBody RegistroUsuarioRequest request) {
-        usuarioService.RegistrarUsuario(request);
+    public ResponseEntity<String> registro(@RequestBody RegistroUsuarioRequest request) {
+        usuarioService.registrarUsuario(request);
         return ResponseEntity.ok("OK");
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> Login(@RequestBody LoginRequest request) {
-        usuarioService.LoginUsuario(request);
+    public ResponseEntity<String> login(@RequestBody LoginRequest request) {
+        usuarioService.loginUsuario(request);
         return ResponseEntity.ok("OK");
     }
 
     @GetMapping("/get")
-    public ResponseEntity<List<UsuarioResponse>> GetAllUsuarios() {
-        List<UsuarioResponse> res = usuarioService.GetAllUsuarios();
+    public ResponseEntity<List<UsuarioResponse>> getAllUsuarios() {
+        List<UsuarioResponse> res = usuarioService.getAllUsuarios();
         return ResponseEntity.ok(res);
     }
 }

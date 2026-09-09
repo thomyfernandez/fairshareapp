@@ -6,7 +6,6 @@ import com.example.fairshareapp.model.response.SueldoResponse;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Componente para mapear entre la entidad Sueldo y sus correspondientes DTOs de Request y Response.
@@ -65,7 +64,7 @@ public class SueldoMapper {
         }
         return sueldos.stream()
                 .map(this::toResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**

@@ -138,6 +138,7 @@ public class BalanceService {
      * @param usuariosPorId Mapa de salida que se completa con los usuarios involucrados, para evitar consultas adicionales.
      * @return Mapa de identificador de usuario a su saldo neto.
      */
+    @SuppressWarnings("null")
     private Map<Long, BigDecimal> calcularSaldosNetos(List<Gasto> gastos, Map<Long, Usuario> usuariosPorId) {
         Map<Long, BigDecimal> saldosNetos = new HashMap<>();
 

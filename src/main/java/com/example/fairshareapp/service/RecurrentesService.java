@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +34,8 @@ import java.util.List;
 @Service
 @Transactional
 public class RecurrentesService {
+
+    private static final String PLANTILLA_NO_ENCONTRADA = "Plantilla favorita no encontrada con id: ";
 
     private final PlantillaGastoRepository plantillaRepository;
     private final ServicioRepository servicioRepository;
@@ -104,7 +107,7 @@ public class RecurrentesService {
      */
     public void eliminarFavorito(Long id) {
         if (!plantillaRepository.existsById(id)) {
-            throw new RecursoNoEncontradoException("Plantilla favorita no encontrada con id: " + id);
+            throw new RecursoNoEncontradoException(PLANTILLA_NO_ENCONTRADA + id);
         }
         plantillaRepository.deleteById(id);
     }
@@ -135,7 +138,7 @@ public class RecurrentesService {
     @Transactional(readOnly = true)
     public PlantillaGastoDTO obtenerFavoritoPorId(Long id) {
         PlantillaGastoRecurrente plantilla = plantillaRepository.findById(id)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Plantilla favorita no encontrada con id: " + id));
+                .orElseThrow(() -> new RecursoNoEncontradoException(PLANTILLA_NO_ENCONTRADA + id));
         return mapearAPlantillaDTO(plantilla);
     }
 
@@ -153,7 +156,7 @@ public class RecurrentesService {
 
         List<PlantillaGastoRecurrente> plantillas = plantillaRepository.findByEspacioId(espacioId);
         List<ServicioVencimientoDTO> vencidos = new ArrayList<>();
-        LocalDate hoy = LocalDate.now();
+        LocalDate hoy = LocalDate.now(ZoneId.systemDefault());
 
         for (PlantillaGastoRecurrente p : plantillas) {
             if (p.getFechaProximaRevision() != null && !p.getFechaProximaRevision().isAfter(hoy)) {
@@ -194,7 +197,7 @@ public class RecurrentesService {
         }
 
         PlantillaGastoRecurrente plantilla = plantillaRepository.findById(id)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Plantilla favorita no encontrada con id: " + id));
+                .orElseThrow(() -> new RecursoNoEncontradoException(PLANTILLA_NO_ENCONTRADA + id));
 
         plantilla.setMontoBase(dto.getNuevoMontoBase());
         if (dto.getNuevoMontoVariable() != null) {
@@ -204,9 +207,10 @@ public class RecurrentesService {
         if (dto.getNuevaFechaProximaRevision() != null) {
             plantilla.setFechaProximaRevision(dto.getNuevaFechaProximaRevision());
         } else if (plantilla.getFrecuenciaAjusteMeses() != null && plantilla.getFrecuenciaAjusteMeses() > 0) {
-            LocalDate fechaBase = (plantilla.getFechaProximaRevision() != null && plantilla.getFechaProximaRevision().isAfter(LocalDate.now()))
+            LocalDate hoy = LocalDate.now(ZoneId.systemDefault());
+            LocalDate fechaBase = (plantilla.getFechaProximaRevision() != null && plantilla.getFechaProximaRevision().isAfter(hoy))
                     ? plantilla.getFechaProximaRevision()
-                    : LocalDate.now();
+                    : hoy;
             plantilla.setFechaProximaRevision(fechaBase.plusMonths(plantilla.getFrecuenciaAjusteMeses()));
         }
 
@@ -223,9 +227,9 @@ public class RecurrentesService {
      */
     public GastoDetalleDTO ejecutarGastoDesdePlantilla(Long id) {
         PlantillaGastoRecurrente plantilla = plantillaRepository.findById(id)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Plantilla favorita no encontrada con id: " + id));
+                .orElseThrow(() -> new RecursoNoEncontradoException(PLANTILLA_NO_ENCONTRADA + id));
 
-        LocalDate hoy = LocalDate.now();
+        LocalDate hoy = LocalDate.now(ZoneId.systemDefault());
         if (plantilla.getFechaProximaRevision() != null && !plantilla.getFechaProximaRevision().isAfter(hoy)) {
             throw new ReglaInvalidaException("El ciclo de la plantilla '" + plantilla.getNombre()
                     + "' vencio el " + plantilla.getFechaProximaRevision()
@@ -304,7 +308,7 @@ public class RecurrentesService {
      */
     private PlantillaGastoDTO mapearAPlantillaDTO(PlantillaGastoRecurrente plantilla) {
         boolean vencido = plantilla.getFechaProximaRevision() != null
-                && !plantilla.getFechaProximaRevision().isAfter(LocalDate.now());
+                && !plantilla.getFechaProximaRevision().isAfter(LocalDate.now(ZoneId.systemDefault()));
 
         return PlantillaGastoDTO.builder()
                 .id(plantilla.getId())

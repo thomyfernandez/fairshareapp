@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 
 /**
@@ -21,6 +22,8 @@ import java.util.List;
 @Service
 @Transactional
 public class SueldoServiceImpl implements SueldoService {
+
+    private static final String SUELDO_NO_ENCONTRADO = "Sueldo no encontrado con id: ";
 
     private final SueldoRepository sueldoRepository;
     private final UsuarioRepository usuarioRepository;
@@ -58,7 +61,7 @@ public class SueldoServiceImpl implements SueldoService {
                 .tipo(sueldoRequest.getTipo())
                 .frecuencia(sueldoRequest.getFrecuencia())
                 .usuario(usuario)
-                .fechaInicio(LocalDate.now())
+                .fechaInicio(LocalDate.now(ZoneId.systemDefault()))
                 .build();
 
         // Sincroniza el sueldo en el usuario para calculos proporcionales
@@ -93,7 +96,7 @@ public class SueldoServiceImpl implements SueldoService {
     @Transactional(readOnly = true)
     public SueldoResponse obtenerSueldo(Long id) {
         Sueldo sueldo = sueldoRepository.findById(id)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Sueldo no encontrado con id: " + id));
+                .orElseThrow(() -> new RecursoNoEncontradoException(SUELDO_NO_ENCONTRADO + id));
         return sueldoMapper.toResponse(sueldo);
     }
 
@@ -118,7 +121,7 @@ public class SueldoServiceImpl implements SueldoService {
     @Override
     public void actualizarSueldo(Long id, SueldoRequest sueldoRequest) {
         Sueldo sueldo = sueldoRepository.findById(id)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Sueldo no encontrado con id: " + id));
+                .orElseThrow(() -> new RecursoNoEncontradoException(SUELDO_NO_ENCONTRADO + id));
 
         sueldo.setMonto(sueldoRequest.getMonto());
         sueldo.setTipo(sueldoRequest.getTipo());
@@ -141,7 +144,7 @@ public class SueldoServiceImpl implements SueldoService {
     @Override
     public void eliminarSueldo(Long id) {
         if (!sueldoRepository.existsById(id)) {
-            throw new RecursoNoEncontradoException("Sueldo no encontrado con id: " + id);
+            throw new RecursoNoEncontradoException(SUELDO_NO_ENCONTRADO + id);
         }
         sueldoRepository.deleteById(id);
     }
@@ -177,7 +180,7 @@ public class SueldoServiceImpl implements SueldoService {
     @Override
     public Sueldo updateSueldo(Long id, SueldoResponse sueldo) {
         Sueldo sueldoFinded = sueldoRepository.findById(id)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Sueldo no encontrado con id: " + id));
+                .orElseThrow(() -> new RecursoNoEncontradoException(SUELDO_NO_ENCONTRADO + id));
 
         if (sueldo.getMonto() != null) {
             sueldoFinded.setMonto(sueldo.getMonto());

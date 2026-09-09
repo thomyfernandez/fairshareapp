@@ -15,7 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 /**
  * Implementacion del servicio transaccional para la administracion de espacios compartidos,
@@ -24,6 +23,8 @@ import java.util.stream.Collectors;
 @Service
 @Transactional
 public class EspacioServiceImpl implements EspacioService {
+
+    private static final String ESPACIO_NO_ENCONTRADO = "Espacio no encontrado con id: ";
 
     private final EspacioRepository espacioRepository;
 
@@ -99,7 +100,7 @@ public class EspacioServiceImpl implements EspacioService {
     @Transactional(readOnly = true)
     public EspacioResponseDTO obtenerEspacioPorId(Long id) {
         Espacio espacio = espacioRepository.findById(id)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Espacio no encontrado con id: " + id));
+                .orElseThrow(() -> new RecursoNoEncontradoException(ESPACIO_NO_ENCONTRADO + id));
         return mapToResponseDTO(espacio);
     }
 
@@ -127,7 +128,7 @@ public class EspacioServiceImpl implements EspacioService {
     @Override
     public EspacioResponseDTO actualizarEspacio(Long id, EspacioUpdateDTO updateDTO) {
         Espacio espacio = espacioRepository.findById(id)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Espacio no encontrado con id: " + id));
+                .orElseThrow(() -> new RecursoNoEncontradoException(ESPACIO_NO_ENCONTRADO + id));
 
         if (updateDTO.getNombre() != null && !updateDTO.getNombre().trim().isEmpty()) {
             String nuevoNombre = updateDTO.getNombre().trim();
@@ -181,7 +182,7 @@ public class EspacioServiceImpl implements EspacioService {
             throw new ReglaInvalidaException("La regla de reparto no puede ser nula");
         }
         Espacio espacio = espacioRepository.findById(id)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Espacio no encontrado con id: " + id));
+                .orElseThrow(() -> new RecursoNoEncontradoException(ESPACIO_NO_ENCONTRADO + id));
 
         espacio.setReglaReparto(reglaReparto);
         Espacio guardado = espacioRepository.save(espacio);
@@ -201,7 +202,7 @@ public class EspacioServiceImpl implements EspacioService {
             throw new ReglaInvalidaException("El presupuesto base no puede ser nulo ni negativo");
         }
         Espacio espacio = espacioRepository.findById(id)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Espacio no encontrado con id: " + id));
+                .orElseThrow(() -> new RecursoNoEncontradoException(ESPACIO_NO_ENCONTRADO + id));
 
         espacio.setPresupuestoBase(presupuestoBase);
         Espacio guardado = espacioRepository.save(espacio);
@@ -218,7 +219,7 @@ public class EspacioServiceImpl implements EspacioService {
     public List<EspacioResponseDTO> listarEspacios() {
         return espacioRepository.findAll().stream()
                 .map(this::mapToResponseDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**
@@ -229,7 +230,7 @@ public class EspacioServiceImpl implements EspacioService {
     @Override
     public void eliminarEspacio(Long id) {
         if (!espacioRepository.existsById(id)) {
-            throw new RecursoNoEncontradoException("Espacio no encontrado con id: " + id);
+            throw new RecursoNoEncontradoException(ESPACIO_NO_ENCONTRADO + id);
         }
         espacioRepository.deleteById(id);
     }

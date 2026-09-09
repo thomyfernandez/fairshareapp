@@ -24,13 +24,13 @@ public class UsuarioServiceImpl implements UsuarioService {
     private final UsuarioRepository usuarioRepository;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
-    public void RegistrarUsuario(RegistroUsuarioRequest request) {
+    public void registrarUsuario(RegistroUsuarioRequest request) {
         if (usuarioRepository.getByEmail(request.email()).isPresent()) {
             throw new EmailYaRegistradoException(request.email());
         }
 
         Usuario newUsuario = Usuario.builder()
-                .usuario(request.usuario())
+                .nombreUsuario(request.usuario())
                 .email(request.email())
                 .contra(passwordEncoder.encode(request.contra()))
                 .nombre(request.nombre())
@@ -40,7 +40,7 @@ public class UsuarioServiceImpl implements UsuarioService {
         usuarioRepository.save(newUsuario);
     }
 
-    public void LoginUsuario(LoginRequest request) {
+    public void loginUsuario(LoginRequest request) {
         Usuario usuario = usuarioRepository.getByEmail(request.email())
                 .orElseThrow(CredencialesInvalidasException::new);
 
@@ -49,14 +49,14 @@ public class UsuarioServiceImpl implements UsuarioService {
         }
     }
 
-    public List<UsuarioResponse> GetAllUsuarios() {
+    public List<UsuarioResponse> getAllUsuarios() {
         List<Usuario> usuarios = usuarioRepository.findAll();
         List<UsuarioResponse> usuarioResponses = new ArrayList<>();
 
         usuarios.forEach(
                 usuario -> {
                     UsuarioResponse res = new UsuarioResponse(
-                            usuario.getUsuario(),
+                            usuario.getNombreUsuario(),
                             usuario.getEmail(),
                             usuario.getNombre(),
                             usuario.getApellido());

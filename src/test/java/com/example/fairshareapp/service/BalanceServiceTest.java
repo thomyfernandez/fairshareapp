@@ -134,8 +134,11 @@ class BalanceServiceTest {
 
         BalanceDTO balance = balanceService.obtenerBalance(1L);
 
-        // Saldo neto: Juan +600, Maria -100+200=+100, Pedro -300-100=-400 => Pedro debe 400 a Juan, Pedro debe 100... en realidad se simplifica.
-        double totalDeudas = balance.getDeudas().stream().mapToDouble(DeudaDetalleDTO::getMonto).sum();
+        // Saldos netos: Juan +500, Maria -100 y Pedro -400.
+        double totalDeudas = 0.0;
+        for (DeudaDetalleDTO deuda : balance.getDeudas()) {
+            totalDeudas += deuda.getMonto();
+        }
         assertEquals(500.0, totalDeudas, 0.01);
     }
 
@@ -200,8 +203,9 @@ class BalanceServiceTest {
 
         when(saldoDeudaRepository.findById(10L)).thenReturn(Optional.of(deuda));
 
+        RegistrarPagoDTO pago = RegistrarPagoDTO.builder().build();
         assertThrows(ReglaInvalidaException.class,
-                () -> balanceService.registrarPago(10L, RegistrarPagoDTO.builder().build()));
+                () -> balanceService.registrarPago(10L, pago));
     }
 
     @Test
@@ -218,7 +222,8 @@ class BalanceServiceTest {
 
         when(saldoDeudaRepository.findById(10L)).thenReturn(Optional.of(deuda));
 
+        RegistrarPagoDTO pago = RegistrarPagoDTO.builder().monto(600.0).build();
         assertThrows(ReglaInvalidaException.class,
-                () -> balanceService.registrarPago(10L, RegistrarPagoDTO.builder().monto(600.0).build()));
+                () -> balanceService.registrarPago(10L, pago));
     }
 }

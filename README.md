@@ -2,6 +2,9 @@
 
 Aplicacion web desarrollada con Spring Boot (Java) en el Backend y React (Vite) en el Frontend, integrada bajo una arquitectura Monorepo limpia y escalable para la gestion y division equitativa de gastos compartidos.
 
+El backend utiliza Spring Boot 4.1.1 y compila para Java 17.
+El contenedor de la aplicacion se ejecuta con el usuario sin privilegios `10001:10001`.
+
 ---
 
 ## Arquitectura del Proyecto

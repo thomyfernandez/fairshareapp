@@ -1,7 +1,6 @@
 package com.example.fairshareapp.controller;
 
 import com.example.fairshareapp.exception.GlobalExceptionHandler;
-import com.example.fairshareapp.exception.RecursoNoEncontradoException;
 import com.example.fairshareapp.exception.ReglaInvalidaException;
 import com.example.fairshareapp.model.dto.ActualizarPrecioCicloDTO;
 import com.example.fairshareapp.model.dto.GastoDetalleDTO;

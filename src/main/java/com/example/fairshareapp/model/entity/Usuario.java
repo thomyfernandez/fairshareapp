@@ -1,5 +1,7 @@
 package com.example.fairshareapp.model.entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -17,7 +19,9 @@ public class Usuario {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String usuario;
+    @Column(name = "usuario")
+    @JsonProperty("usuario")
+    private String nombreUsuario;
     private String email;
     private String contra;
     private String nombre;

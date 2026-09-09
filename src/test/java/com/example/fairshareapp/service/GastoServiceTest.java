@@ -248,6 +248,80 @@ class GastoServiceTest {
     }
 
     /**
+     * Prueba la regla Personalizada con importes fijos que suman exactamente el monto total.
+     */
+    @Test
+    void registrarGasto_ReglaPersonalizadaImportes_CalculaCorrectamente() {
+        when(espacioRepository.findById(1L)).thenReturn(Optional.of(espacio));
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario1));
+        when(usuarioRepository.findById(2L)).thenReturn(Optional.of(usuario2));
+        when(gastoRepository.save(any(Gasto.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        CrearGastoDTO dto = CrearGastoDTO.builder()
+                .descripcion("Compra personalizada")
+                .monto(1000.0)
+                .pagadorId(1L)
+                .regla(ReglaDivision.PERSONALIZADA)
+                .participantes(Arrays.asList(
+                        GastoParticipanteDTO.builder().usuarioId(1L).importe(600.0).build(),
+                        GastoParticipanteDTO.builder().usuarioId(2L).importe(400.0).build()
+                ))
+                .build();
+
+        GastoDetalleDTO resultado = gastoService.registrarGasto(1L, dto);
+
+        assertNotNull(resultado);
+        assertEquals(600.0, resultado.getParticipantes().get(0).getImporte());
+        assertEquals(400.0, resultado.getParticipantes().get(1).getImporte());
+    }
+
+    /**
+     * Prueba que la regla Personalizada lance excepcion si la suma de importes no coincide con el total.
+     */
+    @Test
+    void registrarGasto_ReglaPersonalizadaImportesInvalidos_LanzaExcepcion() {
+        when(espacioRepository.findById(1L)).thenReturn(Optional.of(espacio));
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario1));
+        when(usuarioRepository.findById(2L)).thenReturn(Optional.of(usuario2));
+
+        CrearGastoDTO dto = CrearGastoDTO.builder()
+                .descripcion("Compra personalizada")
+                .monto(1000.0)
+                .pagadorId(1L)
+                .regla(ReglaDivision.PERSONALIZADA)
+                .participantes(Arrays.asList(
+                        GastoParticipanteDTO.builder().usuarioId(1L).importe(500.0).build(),
+                        GastoParticipanteDTO.builder().usuarioId(2L).importe(400.0).build()
+                ))
+                .build();
+
+        assertThrows(ReglaInvalidaException.class, () -> gastoService.registrarGasto(1L, dto));
+    }
+
+    /**
+     * Prueba que la regla Personalizada lance excepcion si no se indican porcentajes ni importes.
+     */
+    @Test
+    void registrarGasto_ReglaPersonalizadaSinDatos_LanzaExcepcion() {
+        when(espacioRepository.findById(1L)).thenReturn(Optional.of(espacio));
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario1));
+        when(usuarioRepository.findById(2L)).thenReturn(Optional.of(usuario2));
+
+        CrearGastoDTO dto = CrearGastoDTO.builder()
+                .descripcion("Compra personalizada")
+                .monto(1000.0)
+                .pagadorId(1L)
+                .regla(ReglaDivision.PERSONALIZADA)
+                .participantes(Arrays.asList(
+                        GastoParticipanteDTO.builder().usuarioId(1L).build(),
+                        GastoParticipanteDTO.builder().usuarioId(2L).build()
+                ))
+                .build();
+
+        assertThrows(ReglaInvalidaException.class, () -> gastoService.registrarGasto(1L, dto));
+    }
+
+    /**
      * Prueba la consulta de lote de gastos filtrando por rango de fechas.
      */
     @Test
