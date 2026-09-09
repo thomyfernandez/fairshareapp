@@ -6,6 +6,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import lombok.*;
 
+import java.math.BigDecimal;
+
 @Entity
 @Getter
 @Setter
@@ -22,6 +24,6 @@ public class Usuario {
     private String contra;
     private String nombre;
     private String apellido;
-    private Double sueldo;
+    private BigDecimal sueldo;
 
 }

@@ -9,7 +9,7 @@ import com.example.fairshareapp.model.entity.Categoria;
 import com.example.fairshareapp.model.entity.Espacio;
 import com.example.fairshareapp.model.entity.Gasto;
 import com.example.fairshareapp.model.entity.GastoParticipante;
-import com.example.fairshareapp.model.entity.ReglaDivision;
+import com.example.fairshareapp.model.enums.ReglaDivision;
 import com.example.fairshareapp.model.entity.Usuario;
 import com.example.fairshareapp.repository.CategoriaRepository;
 import com.example.fairshareapp.repository.EspacioRepository;
@@ -94,7 +94,9 @@ public class GastoService {
                 .build();
 
         List<GastoParticipante> participantesCalculados = calcularParticipaciones(nuevoGasto, dto.getMonto(), regla, dto.getParticipantes());
-        participantesCalculados.forEach(nuevoGasto::agregarParticipante);
+        participantesCalculados.forEach(participante -> {
+            nuevoGasto.getParticipantes().add(participante);
+        });
 
         Gasto gastoGuardado = gastoRepository.save(nuevoGasto);
         return mapearADetalleDTO(gastoGuardado);
@@ -184,7 +186,7 @@ public class GastoService {
         if (dto.getDescripcion() == null || dto.getDescripcion().trim().isEmpty()) {
             throw new ReglaInvalidaException("La descripcion del gasto es obligatoria");
         }
-        if (dto.getMonto() == null || dto.getMonto() <= 0) {
+        if (dto.getMonto() == null || dto.getMonto().doubleValue() <= 0) {
             throw new ReglaInvalidaException("El monto del gasto debe ser un valor positivo");
         }
         if (dto.getPagadorId() == null) {
@@ -205,7 +207,7 @@ public class GastoService {
      * @return Lista de entidades GastoParticipante calculadas y preparadas para persistir.
      */
     private List<GastoParticipante> calcularParticipaciones(Gasto gasto,
-                                                          Double montoTotal,
+                                                          BigDecimal montoTotal,
                                                           ReglaDivision regla,
                                                           List<GastoParticipanteDTO> participantesDTO) {
         List<Usuario> usuarios = new ArrayList<>();
@@ -234,15 +236,14 @@ public class GastoService {
      * @param usuarios Lista de usuarios que participan de la division.
      * @return Lista de participaciones con sus cuotas equitativas asignadas.
      */
-    private List<GastoParticipante> calcularDivisionEquitativa(Gasto gasto, Double montoTotal, List<Usuario> usuarios) {
+    private List<GastoParticipante> calcularDivisionEquitativa(Gasto gasto, BigDecimal montoTotal, List<Usuario> usuarios) {
         int cantidad = usuarios.size();
-        BigDecimal total = BigDecimal.valueOf(montoTotal);
         BigDecimal divisor = BigDecimal.valueOf(cantidad);
 
         // Cuota base redondeada hacia abajo a 2 decimales
-        BigDecimal cuotaBase = total.divide(divisor, 2, RoundingMode.DOWN);
+        BigDecimal cuotaBase = montoTotal.divide(divisor, 2, RoundingMode.DOWN);
         BigDecimal sumaParcial = cuotaBase.multiply(divisor);
-        BigDecimal restoCentavos = total.subtract(sumaParcial);
+        BigDecimal restoCentavos = montoTotal.subtract(sumaParcial);
 
         BigDecimal porcentajePorPersona = BigDecimal.valueOf(100.0)
                 .divide(divisor, 2, RoundingMode.HALF_UP);
@@ -255,8 +256,8 @@ public class GastoService {
             resultado.add(GastoParticipante.builder()
                     .gasto(gasto)
                     .usuario(usuarios.get(i))
-                    .importe(cuotaFinal.doubleValue())
-                    .porcentaje(porcentajePorPersona.doubleValue())
+                    .importe(cuotaFinal)
+                    .porcentaje(porcentajePorPersona)
                     .build());
         }
         return resultado;
@@ -273,7 +274,7 @@ public class GastoService {
      * @return Lista de participaciones ponderadas por ingreso.
      */
     private List<GastoParticipante> calcularDivisionProporcionalIngresos(Gasto gasto,
-                                                                        Double montoTotal,
+                                                                        BigDecimal montoTotal,
                                                                         List<Usuario> usuarios,
                                                                         List<GastoParticipanteDTO> dtos) {
         List<BigDecimal> sueldos = new ArrayList<>();
@@ -284,45 +285,43 @@ public class GastoService {
             GastoParticipanteDTO partDto = dtos.get(i);
 
             // Permite tomar el sueldo provisto en la solicitud o el persistido en la entidad de usuario
-            Double sueldoDeclarado = (partDto.getSueldo() != null && partDto.getSueldo() > 0)
+            BigDecimal sueldoDeclarado = (partDto.getSueldo() != null && partDto.getSueldo().doubleValue() > 0)
                     ? partDto.getSueldo()
                     : usuario.getSueldo();
 
-            if (sueldoDeclarado == null || sueldoDeclarado <= 0) {
+            if (sueldoDeclarado == null || sueldoDeclarado.compareTo(BigDecimal.ZERO) <= 0) {
                 throw new ReglaInvalidaException("El usuario con id " + usuario.getId() +
                         " no cuenta con un sueldo registrado mayor a cero para aplicar la division proporcional");
             }
 
-            BigDecimal sueldoBD = BigDecimal.valueOf(sueldoDeclarado);
-            sueldos.add(sueldoBD);
-            totalSueldos = totalSueldos.add(sueldoBD);
+            sueldos.add(sueldoDeclarado);
+            totalSueldos = totalSueldos.add(sueldoDeclarado);
         }
 
-        BigDecimal montoTotalBD = BigDecimal.valueOf(montoTotal);
         BigDecimal acumuladoImportes = BigDecimal.ZERO;
         List<GastoParticipante> participaciones = new ArrayList<>();
 
         for (int i = 0; i < usuarios.size(); i++) {
             BigDecimal sueldo = sueldos.get(i);
             // Multiplica monto por sueldo antes de dividir por totalSueldos para mantener maxima precision
-            BigDecimal importe = montoTotalBD.multiply(sueldo).divide(totalSueldos, 2, RoundingMode.HALF_UP);
+            BigDecimal importe = montoTotal.multiply(sueldo).divide(totalSueldos, 2, RoundingMode.HALF_UP);
             BigDecimal porcentaje = sueldo.multiply(BigDecimal.valueOf(100.0)).divide(totalSueldos, 2, RoundingMode.HALF_UP);
 
             acumuladoImportes = acumuladoImportes.add(importe);
             participaciones.add(GastoParticipante.builder()
                     .gasto(gasto)
                     .usuario(usuarios.get(i))
-                    .importe(importe.doubleValue())
-                    .porcentaje(porcentaje.doubleValue())
+                    .importe(importe)
+                    .porcentaje(porcentaje)
                     .build());
         }
 
         // Ajuste de eventuales centavos de redondeo sobre el primer participante para balance exacto
-        BigDecimal diferencia = montoTotalBD.subtract(acumuladoImportes);
+        BigDecimal diferencia = montoTotal.subtract(acumuladoImportes);
         if (diferencia.compareTo(BigDecimal.ZERO) != 0 && !participaciones.isEmpty()) {
             GastoParticipante primerParticipante = participaciones.get(0);
-            BigDecimal importeCorregido = BigDecimal.valueOf(primerParticipante.getImporte()).add(diferencia);
-            primerParticipante.setImporte(importeCorregido.doubleValue());
+            BigDecimal importeCorregido = primerParticipante.getImporte().add(diferencia);
+            primerParticipante.setImporte(importeCorregido);
         }
 
         return participaciones;
@@ -339,7 +338,7 @@ public class GastoService {
      * @return Lista de participaciones personalizadas validadas.
      */
     private List<GastoParticipante> calcularDivisionPersonalizada(Gasto gasto,
-                                                                 Double montoTotal,
+                                                                 BigDecimal montoTotal,
                                                                  List<Usuario> usuarios,
                                                                  List<GastoParticipanteDTO> dtos) {
         boolean usaPorcentajes = dtos.stream().anyMatch(d -> d.getPorcentaje() != null);
@@ -349,16 +348,15 @@ public class GastoService {
             throw new ReglaInvalidaException("Para la regla personalizada se requiere indicar porcentajes o montos por participante");
         }
 
-        BigDecimal montoTotalBD = BigDecimal.valueOf(montoTotal);
         List<GastoParticipante> resultado = new ArrayList<>();
 
         if (usaPorcentajes) {
             BigDecimal sumaPorcentajes = BigDecimal.ZERO;
             for (GastoParticipanteDTO dto : dtos) {
-                if (dto.getPorcentaje() == null || dto.getPorcentaje() < 0) {
+                if (dto.getPorcentaje() == null || dto.getPorcentaje().compareTo(BigDecimal.ZERO) < 0) {
                     throw new ReglaInvalidaException("Cada participante debe contar con un porcentaje valido no negativo");
                 }
-                sumaPorcentajes = sumaPorcentajes.add(BigDecimal.valueOf(dto.getPorcentaje()));
+                sumaPorcentajes = sumaPorcentajes.add(dto.getPorcentaje());
             }
 
             // Validar que la suma de porcentajes coincida con el 100% con tolerancia minima
@@ -368,50 +366,50 @@ public class GastoService {
 
             BigDecimal sumaImportes = BigDecimal.ZERO;
             for (int i = 0; i < usuarios.size(); i++) {
-                BigDecimal porcentaje = BigDecimal.valueOf(dtos.get(i).getPorcentaje());
-                BigDecimal importe = montoTotalBD.multiply(porcentaje)
+                BigDecimal porcentaje = dtos.get(i).getPorcentaje();
+                BigDecimal importe = montoTotal.multiply(porcentaje)
                         .divide(BigDecimal.valueOf(100.0), 2, RoundingMode.HALF_UP);
 
                 sumaImportes = sumaImportes.add(importe);
                 resultado.add(GastoParticipante.builder()
                         .gasto(gasto)
                         .usuario(usuarios.get(i))
-                        .importe(importe.doubleValue())
-                        .porcentaje(porcentaje.doubleValue())
+                        .importe(importe)
+                        .porcentaje(porcentaje)
                         .build());
             }
 
-            BigDecimal diferencia = montoTotalBD.subtract(sumaImportes);
+            BigDecimal diferencia = montoTotal.subtract(sumaImportes);
             if (diferencia.compareTo(BigDecimal.ZERO) != 0 && !resultado.isEmpty()) {
                 GastoParticipante primerParticipante = resultado.get(0);
-                primerParticipante.setImporte(BigDecimal.valueOf(primerParticipante.getImporte()).add(diferencia).doubleValue());
+                primerParticipante.setImporte(primerParticipante.getImporte().add(diferencia));
             }
 
         } else {
             BigDecimal sumaImportes = BigDecimal.ZERO;
             for (GastoParticipanteDTO dto : dtos) {
-                if (dto.getImporte() == null || dto.getImporte() < 0) {
+                if (dto.getImporte() == null || dto.getImporte().compareTo(BigDecimal.ZERO) < 0) {
                     throw new ReglaInvalidaException("Cada participante debe contar con un importe fijo valido no negativo");
                 }
-                sumaImportes = sumaImportes.add(BigDecimal.valueOf(dto.getImporte()));
+                sumaImportes = sumaImportes.add(dto.getImporte());
             }
 
             // Validar que la suma de importes equivalga exactamente al total
-            if (sumaImportes.subtract(montoTotalBD).abs().compareTo(BigDecimal.valueOf(0.01)) > 0) {
+            if (sumaImportes.subtract(montoTotal).abs().compareTo(BigDecimal.valueOf(0.01)) > 0) {
                 throw new ReglaInvalidaException("La suma de importes fijados (" + sumaImportes +
-                        ") no coincide con el monto total (" + montoTotalBD + ")");
+                        ") no coincide con el monto total (" + montoTotal + ")");
             }
 
             for (int i = 0; i < usuarios.size(); i++) {
-                BigDecimal importe = BigDecimal.valueOf(dtos.get(i).getImporte());
+                BigDecimal importe = dtos.get(i).getImporte();
                 BigDecimal porcentaje = importe.multiply(BigDecimal.valueOf(100.0))
-                        .divide(montoTotalBD, 2, RoundingMode.HALF_UP);
+                        .divide(montoTotal, 2, RoundingMode.HALF_UP);
 
                 resultado.add(GastoParticipante.builder()
                         .gasto(gasto)
                         .usuario(usuarios.get(i))
-                        .importe(importe.doubleValue())
-                        .porcentaje(porcentaje.doubleValue())
+                        .importe(importe)
+                        .porcentaje(porcentaje)
                         .build());
             }
         }

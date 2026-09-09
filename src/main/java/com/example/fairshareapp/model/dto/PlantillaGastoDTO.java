@@ -1,6 +1,6 @@
 package com.example.fairshareapp.model.dto;
 
-import com.example.fairshareapp.model.entity.ReglaDivision;
+import com.example.fairshareapp.model.enums.ReglaDivision;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;

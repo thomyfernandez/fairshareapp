@@ -8,14 +8,10 @@ import com.example.fairshareapp.model.dto.GastoDetalleDTO;
 import com.example.fairshareapp.model.dto.GastoParticipanteDTO;
 import com.example.fairshareapp.model.dto.PlantillaGastoDTO;
 import com.example.fairshareapp.model.dto.ServicioVencimientoDTO;
-import com.example.fairshareapp.model.entity.PlantillaGastoRecurrente;
-import com.example.fairshareapp.model.entity.ReglaDivision;
-import com.example.fairshareapp.model.entity.Servicio;
-import com.example.fairshareapp.model.entity.Usuario;
-import com.example.fairshareapp.repository.EspacioRepository;
-import com.example.fairshareapp.repository.PlantillaGastoRepository;
-import com.example.fairshareapp.repository.ServicioRepository;
-import com.example.fairshareapp.repository.UsuarioRepository;
+import com.example.fairshareapp.model.entity.*;
+import com.example.fairshareapp.model.enums.ReglaDivision;
+import com.example.fairshareapp.repository.*;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +20,7 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Servicio de negocio para la administracion de gastos recurrentes, plantillas y favoritos.
@@ -32,34 +29,15 @@ import java.util.List;
  */
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class RecurrentesService {
 
     private final PlantillaGastoRepository plantillaRepository;
     private final ServicioRepository servicioRepository;
     private final EspacioRepository espacioRepository;
     private final UsuarioRepository usuarioRepository;
+    private final CategoriaRepository categoriaRepository;
     private final GastoService gastoService;
-
-    /**
-     * Constructor con inyeccion de dependencias de los componentes requeridos.
-     *
-     * @param plantillaRepository Repositorio de plantillas de gastos.
-     * @param servicioRepository Repositorio de catalogo de servicios.
-     * @param espacioRepository Repositorio de espacios compartidos.
-     * @param usuarioRepository Repositorio de usuarios.
-     * @param gastoService Servicio de logica de gastos.
-     */
-    public RecurrentesService(PlantillaGastoRepository plantillaRepository,
-                              ServicioRepository servicioRepository,
-                              EspacioRepository espacioRepository,
-                              UsuarioRepository usuarioRepository,
-                              GastoService gastoService) {
-        this.plantillaRepository = plantillaRepository;
-        this.servicioRepository = servicioRepository;
-        this.espacioRepository = espacioRepository;
-        this.usuarioRepository = usuarioRepository;
-        this.gastoService = gastoService;
-    }
 
     /**
      * Guarda una plantilla de gasto como favorita asociada a un espacio compartido.
@@ -70,8 +48,22 @@ public class RecurrentesService {
     public PlantillaGastoDTO guardarFavorito(PlantillaGastoDTO dto) {
         validarDatosPlantilla(dto);
 
-        if (!espacioRepository.existsById(dto.getEspacioId())) {
+        Optional<Espacio> espacio = espacioRepository.findById(dto.getEspacioId());
+
+        if (espacio.isEmpty()) {
             throw new RecursoNoEncontradoException("Espacio no encontrado con id: " + dto.getEspacioId());
+        }
+
+        Optional<Usuario> pagador = usuarioRepository.findById(dto.getPagadorId());
+
+        if (pagador.isEmpty()) {
+            throw new RecursoNoEncontradoException("Pagador no encontrado con id: " + dto.getEspacioId());
+        }
+
+        Optional<Categoria> categoria = categoriaRepository.findById(dto.getCategoriaId());
+
+        if (categoria.isEmpty()) {
+            throw new RecursoNoEncontradoException("Categoria no encontrado con id: " + dto.getEspacioId());
         }
 
         Servicio servicio = null;
@@ -86,10 +78,10 @@ public class RecurrentesService {
                 .montoBase(dto.getMontoBase())
                 .montoVariable(dto.getMontoVariable() != null ? dto.getMontoVariable() : BigDecimal.ZERO)
                 .fechaProximaRevision(dto.getFechaProximaRevision())
-                .espacioId(dto.getEspacioId())
+                .espacioId(espacio.get())
                 .servicio(servicio)
-                .pagadorId(dto.getPagadorId())
-                .categoriaId(dto.getCategoriaId())
+                .pagadorId(pagador.get())
+                .categoria(categoria.get())
                 .reglaDivision(dto.getReglaDivision() != null ? dto.getReglaDivision() : ReglaDivision.EQUITATIVA)
                 .build();
 
@@ -249,7 +241,7 @@ public class RecurrentesService {
             throw new ReglaInvalidaException("No hay usuarios registrados en el sistema para asociar al gasto");
         }
 
-        Long pagadorId = plantilla.getPagadorId();
+        Long pagadorId = plantilla.getPagadorId().getId();
         if (pagadorId == null || !usuarioRepository.existsById(pagadorId)) {
             pagadorId = usuariosDisponibles.get(0).getId();
         }
@@ -262,15 +254,15 @@ public class RecurrentesService {
 
         CrearGastoDTO crearGastoDTO = CrearGastoDTO.builder()
                 .descripcion(plantilla.getNombre())
-                .monto(montoTotalBD.doubleValue())
+                .monto(montoTotalBD)
                 .fecha(hoy)
                 .pagadorId(pagadorId)
-                .categoriaId(plantilla.getCategoriaId())
+                .categoriaId(plantilla.getCategoria().getId())
                 .regla(regla)
                 .participantes(participantes)
                 .build();
 
-        return gastoService.registrarGasto(plantilla.getEspacioId(), crearGastoDTO);
+        return gastoService.registrarGasto(plantilla.getEspacioId().getId(), crearGastoDTO);
     }
 
     /**
@@ -313,11 +305,11 @@ public class RecurrentesService {
                 .montoBase(plantilla.getMontoBase())
                 .montoVariable(plantilla.getMontoVariable())
                 .fechaProximaRevision(plantilla.getFechaProximaRevision())
-                .espacioId(plantilla.getEspacioId())
+                .espacioId(plantilla.getEspacioId().getId())
                 .servicioId(plantilla.getServicio() != null ? plantilla.getServicio().getId() : null)
                 .nombreServicio(plantilla.getServicio() != null ? plantilla.getServicio().getNombre() : null)
-                .pagadorId(plantilla.getPagadorId())
-                .categoriaId(plantilla.getCategoriaId())
+                .pagadorId(plantilla.getPagadorId().getId())
+                .categoriaId(plantilla.getCategoria().getId())
                 .reglaDivision(plantilla.getReglaDivision())
                 .vencido(vencido)
                 .build();

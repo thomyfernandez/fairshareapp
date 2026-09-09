@@ -1,5 +1,6 @@
 package com.example.fairshareapp.model.entity;
 
+import com.example.fairshareapp.model.enums.ReglaDivision;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -53,18 +54,21 @@ public class PlantillaGastoRecurrente {
     @Column(name = "fecha_proxima_revision")
     private LocalDate fechaProximaRevision;
 
-    @Column(name = "espacio_id", nullable = false)
-    private Long espacioId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "espacio_id", nullable = false)
+    private Espacio espacioId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "servicio_id")
     private Servicio servicio;
 
-    @Column(name = "pagador_id")
-    private Long pagadorId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "pagador_id", nullable = false)
+    private Usuario pagadorId;
 
-    @Column(name = "categoria_id")
-    private Long categoriaId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "categoria_id")
+    private Categoria categoria;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "regla_division")

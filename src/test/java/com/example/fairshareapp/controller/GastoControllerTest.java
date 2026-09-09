@@ -4,7 +4,7 @@ import com.example.fairshareapp.exception.GlobalExceptionHandler;
 import com.example.fairshareapp.exception.RecursoNoEncontradoException;
 import com.example.fairshareapp.model.dto.CrearGastoDTO;
 import com.example.fairshareapp.model.dto.GastoDetalleDTO;
-import com.example.fairshareapp.model.entity.ReglaDivision;
+import com.example.fairshareapp.model.enums.ReglaDivision;
 import com.example.fairshareapp.service.GastoService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

@@ -5,7 +5,7 @@ import com.example.fairshareapp.exception.RecursoNoEncontradoException;
 import com.example.fairshareapp.exception.ReglaInvalidaException;
 import com.example.fairshareapp.model.dto.BalanceDTO;
 import com.example.fairshareapp.model.dto.DeudaDetalleDTO;
-import com.example.fairshareapp.model.entity.EstadoDeuda;
+import com.example.fairshareapp.model.enums.EstadoDeuda;
 import com.example.fairshareapp.service.BalanceService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

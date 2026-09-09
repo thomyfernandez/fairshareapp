@@ -1,4 +1,4 @@
-package com.example.fairshareapp.model.entity;
+package com.example.fairshareapp.model.enums;
 
 /**
  * Enumeracion que define las reglas de division aplicables a un gasto compartido.
