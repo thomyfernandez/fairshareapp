@@ -1,5 +1,7 @@
 package com.example.fairshareapp.controller;
 
+import java.math.BigDecimal;
+
 import com.example.fairshareapp.exception.GlobalExceptionHandler;
 import com.example.fairshareapp.exception.RecursoNoEncontradoException;
 import com.example.fairshareapp.exception.ReglaInvalidaException;
@@ -63,7 +65,7 @@ class BalanceControllerTest {
                 .deudorNombre("Maria Gomez")
                 .acreedorId(1L)
                 .acreedorNombre("Juan Perez")
-                .monto(500.0)
+                .monto(BigDecimal.valueOf(500.0))
                 .estado(EstadoDeuda.PENDIENTE)
                 .build();
 
@@ -101,7 +103,7 @@ class BalanceControllerTest {
         DeudaDetalleDTO deuda = DeudaDetalleDTO.builder()
                 .id(1L)
                 .estado(EstadoDeuda.SALDADO)
-                .monto(0.0)
+                .monto(BigDecimal.valueOf(0.0))
                 .build();
 
         when(balanceService.registrarPago(eq(1L), any())).thenReturn(deuda);

@@ -1,5 +1,7 @@
 package com.example.fairshareapp.service;
 
+import java.math.BigDecimal;
+
 import com.example.fairshareapp.exception.RecursoNoEncontradoException;
 import com.example.fairshareapp.exception.ReglaInvalidaException;
 import com.example.fairshareapp.model.dto.BalanceDTO;
@@ -20,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
@@ -50,6 +53,9 @@ class BalanceServiceTest {
 
     @Mock
     private EspacioRepository espacioRepository;
+
+    @Spy
+    private SaldoCalculator saldoCalculator = new SaldoCalculator();
 
     @InjectMocks
     private BalanceService balanceService;
@@ -84,7 +90,7 @@ class BalanceServiceTest {
         Gasto gasto = Gasto.builder()
                 .id(secuenciaId.getAndIncrement())
                 .descripcion("Gasto de prueba")
-                .monto(monto)
+                .monto(BigDecimal.valueOf(monto))
                 .fecha(LocalDate.now())
                 .espacio(espacio)
                 .pagador(pagador)
@@ -96,7 +102,7 @@ class BalanceServiceTest {
         for (Usuario usuario : participantes) {
             gasto.agregarParticipante(GastoParticipante.builder()
                     .usuario(usuario)
-                    .importe(cuota)
+                    .importe(BigDecimal.valueOf(cuota))
                     .build());
         }
         return gasto;
@@ -116,7 +122,7 @@ class BalanceServiceTest {
         DeudaDetalleDTO deuda = balance.getDeudas().get(0);
         assertEquals(maria.getId(), deuda.getDeudorId());
         assertEquals(juan.getId(), deuda.getAcreedorId());
-        assertEquals(500.0, deuda.getMonto());
+        assertEquals(500.0, deuda.getMonto().doubleValue());
         assertEquals(EstadoDeuda.PENDIENTE, deuda.getEstado());
     }
 
@@ -135,7 +141,7 @@ class BalanceServiceTest {
         BalanceDTO balance = balanceService.obtenerBalance(1L);
 
         // Saldo neto: Juan +600, Maria -100+200=+100, Pedro -300-100=-400 => Pedro debe 400 a Juan, Pedro debe 100... en realidad se simplifica.
-        double totalDeudas = balance.getDeudas().stream().mapToDouble(DeudaDetalleDTO::getMonto).sum();
+        double totalDeudas = balance.getDeudas().stream().mapToDouble(d -> d.getMonto().doubleValue()).sum();
         assertEquals(500.0, totalDeudas, 0.01);
     }
 
@@ -153,8 +159,8 @@ class BalanceServiceTest {
                 .espacio(espacio)
                 .deudor(maria)
                 .acreedor(juan)
-                .montoOriginal(500.0)
-                .monto(500.0)
+                .montoOriginal(BigDecimal.valueOf(500.0))
+                .monto(BigDecimal.valueOf(500.0))
                 .estado(EstadoDeuda.PENDIENTE)
                 .build();
 
@@ -163,7 +169,7 @@ class BalanceServiceTest {
         DeudaDetalleDTO resultado = balanceService.registrarPago(10L, RegistrarPagoDTO.builder().build());
 
         assertEquals(EstadoDeuda.SALDADO, resultado.getEstado());
-        assertEquals(0.0, resultado.getMonto());
+        assertEquals(0.0, resultado.getMonto().doubleValue());
     }
 
     @Test
@@ -173,17 +179,17 @@ class BalanceServiceTest {
                 .espacio(espacio)
                 .deudor(maria)
                 .acreedor(juan)
-                .montoOriginal(500.0)
-                .monto(500.0)
+                .montoOriginal(BigDecimal.valueOf(500.0))
+                .monto(BigDecimal.valueOf(500.0))
                 .estado(EstadoDeuda.PENDIENTE)
                 .build();
 
         when(saldoDeudaRepository.findById(10L)).thenReturn(Optional.of(deuda));
 
-        DeudaDetalleDTO resultado = balanceService.registrarPago(10L, RegistrarPagoDTO.builder().monto(200.0).build());
+        DeudaDetalleDTO resultado = balanceService.registrarPago(10L, RegistrarPagoDTO.builder().monto(BigDecimal.valueOf(200.0)).build());
 
         assertEquals(EstadoDeuda.PENDIENTE, resultado.getEstado());
-        assertEquals(300.0, resultado.getMonto());
+        assertEquals(300.0, resultado.getMonto().doubleValue());
     }
 
     @Test
@@ -193,8 +199,8 @@ class BalanceServiceTest {
                 .espacio(espacio)
                 .deudor(maria)
                 .acreedor(juan)
-                .montoOriginal(500.0)
-                .monto(0.0)
+                .montoOriginal(BigDecimal.valueOf(500.0))
+                .monto(BigDecimal.valueOf(0.0))
                 .estado(EstadoDeuda.SALDADO)
                 .build();
 
@@ -211,14 +217,14 @@ class BalanceServiceTest {
                 .espacio(espacio)
                 .deudor(maria)
                 .acreedor(juan)
-                .montoOriginal(500.0)
-                .monto(500.0)
+                .montoOriginal(BigDecimal.valueOf(500.0))
+                .monto(BigDecimal.valueOf(500.0))
                 .estado(EstadoDeuda.PENDIENTE)
                 .build();
 
         when(saldoDeudaRepository.findById(10L)).thenReturn(Optional.of(deuda));
 
         assertThrows(ReglaInvalidaException.class,
-                () -> balanceService.registrarPago(10L, RegistrarPagoDTO.builder().monto(600.0).build()));
+                () -> balanceService.registrarPago(10L, RegistrarPagoDTO.builder().monto(BigDecimal.valueOf(600.0)).build()));
     }
 }

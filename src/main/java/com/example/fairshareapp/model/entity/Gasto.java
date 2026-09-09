@@ -71,4 +71,26 @@ public class Gasto {
     @OneToMany(mappedBy = "gasto", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<GastoParticipante> participantes = new ArrayList<>();
+
+    /**
+     * Agrega un participante a la coleccion de participantes del gasto,
+     * manteniendo la coherencia bidireccional de la relacion.
+     *
+     * @param participante Instancia de GastoParticipante a asociar.
+     */
+    public void agregarParticipante(GastoParticipante participante) {
+        participantes.add(participante);
+        participante.setGasto(this);
+    }
+
+    /**
+     * Remueve un participante de la coleccion de participantes del gasto,
+     * desvinculando la relacion bidireccional.
+     *
+     * @param participante Instancia de GastoParticipante a remover.
+     */
+    public void removerParticipante(GastoParticipante participante) {
+        participantes.remove(participante);
+        participante.setGasto(null);
+    }
 }
