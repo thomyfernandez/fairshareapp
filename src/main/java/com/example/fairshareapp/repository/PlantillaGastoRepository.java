@@ -4,11 +4,13 @@ import com.example.fairshareapp.model.entity.PlantillaGastoRecurrente;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 import java.util.List;
 
 /**
  * Repositorio Spring Data JPA para la persistencia y consulta de plantillas de gastos recurrentes y favoritos.
  */
+@Repository
 public interface PlantillaGastoRepository extends JpaRepository<PlantillaGastoRecurrente, Long> {
 
     /**

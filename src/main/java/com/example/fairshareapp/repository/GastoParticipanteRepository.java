@@ -2,12 +2,14 @@ package com.example.fairshareapp.repository;
 
 import com.example.fairshareapp.model.entity.GastoParticipante;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 import java.util.List;
 
 /**
  * Repositorio Spring Data JPA para la entidad GastoParticipante.
  * Provee metodos de consulta y persistencia para las particiones asignadas a los usuarios.
  */
+@Repository
 public interface GastoParticipanteRepository extends JpaRepository<GastoParticipante, Long> {
 
     /**

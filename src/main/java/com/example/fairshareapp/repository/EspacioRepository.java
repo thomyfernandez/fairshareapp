@@ -2,12 +2,14 @@ package com.example.fairshareapp.repository;
 
 import com.example.fairshareapp.model.entity.Espacio;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 /**
  * Repositorio Spring Data JPA para la entidad Espacio.
  * Provee operaciones de persistencia, busqueda y validacion de unicidad de nombres y codigos de espacios.
  */
+@Repository
 public interface EspacioRepository extends JpaRepository<Espacio, Long> {
 
     /**
