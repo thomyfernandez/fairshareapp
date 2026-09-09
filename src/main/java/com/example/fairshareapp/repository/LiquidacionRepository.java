@@ -2,6 +2,7 @@ package com.example.fairshareapp.repository;
 
 import com.example.fairshareapp.model.entity.Liquidacion;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -10,6 +11,7 @@ import java.util.List;
  * Repositorio Spring Data JPA para la gestion de entidades Liquidacion.
  * Ofrece consultas para recuperar historiales de liquidaciones por espacio, rango de fechas y periodo mensual.
  */
+@Repository
 public interface LiquidacionRepository extends JpaRepository<Liquidacion, Long> {
 
     /**
