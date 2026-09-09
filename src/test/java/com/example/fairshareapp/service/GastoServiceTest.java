@@ -1,5 +1,7 @@
 package com.example.fairshareapp.service;
 
+import java.math.BigDecimal;
+
 import com.example.fairshareapp.exception.RecursoNoEncontradoException;
 import com.example.fairshareapp.exception.ReglaInvalidaException;
 import com.example.fairshareapp.model.dto.CrearGastoDTO;
@@ -13,6 +15,7 @@ import com.example.fairshareapp.model.entity.Usuario;
 import com.example.fairshareapp.repository.CategoriaRepository;
 import com.example.fairshareapp.repository.EspacioRepository;
 import com.example.fairshareapp.repository.GastoRepository;
+import com.example.fairshareapp.repository.PeriodoRepository;
 import com.example.fairshareapp.repository.UsuarioRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -52,6 +55,9 @@ class GastoServiceTest {
     @Mock
     private CategoriaRepository categoriaRepository;
 
+    @Mock
+    private PeriodoRepository periodoRepository;
+
     @InjectMocks
     private GastoService gastoService;
 
@@ -73,7 +79,7 @@ class GastoServiceTest {
                 .nombre("Juan")
                 .apellido("Perez")
                 .email("juan@test.com")
-                .sueldo(200000.0)
+                .sueldo(BigDecimal.valueOf(200000.0))
                 .build();
 
         usuario2 = Usuario.builder()
@@ -81,7 +87,7 @@ class GastoServiceTest {
                 .nombre("Maria")
                 .apellido("Gomez")
                 .email("maria@test.com")
-                .sueldo(100000.0)
+                .sueldo(BigDecimal.valueOf(100000.0))
                 .build();
 
         usuario3 = Usuario.builder()
@@ -89,7 +95,7 @@ class GastoServiceTest {
                 .nombre("Lucas")
                 .apellido("Diaz")
                 .email("lucas@test.com")
-                .sueldo(100000.0)
+                .sueldo(BigDecimal.valueOf(100000.0))
                 .build();
 
         categoria = Categoria.builder().id(1L).nombre("Supermercado").build();
@@ -113,7 +119,7 @@ class GastoServiceTest {
 
         CrearGastoDTO dto = CrearGastoDTO.builder()
                 .descripcion("Cena compartida")
-                .monto(100.0)
+                .monto(BigDecimal.valueOf(100.0))
                 .pagadorId(1L)
                 .categoriaId(1L)
                 .regla(ReglaDivision.EQUITATIVA)
@@ -129,9 +135,9 @@ class GastoServiceTest {
         assertNotNull(resultado);
         assertEquals(3, resultado.getParticipantes().size());
         // El primer participante absorbe el ajuste de centavo (33.34 + 33.33 + 33.33 = 100.00)
-        assertEquals(33.34, resultado.getParticipantes().get(0).getImporte());
-        assertEquals(33.33, resultado.getParticipantes().get(1).getImporte());
-        assertEquals(33.33, resultado.getParticipantes().get(2).getImporte());
+        assertEquals(33.34, resultado.getParticipantes().get(0).getImporte().doubleValue());
+        assertEquals(33.33, resultado.getParticipantes().get(1).getImporte().doubleValue());
+        assertEquals(33.33, resultado.getParticipantes().get(2).getImporte().doubleValue());
     }
 
     /**
@@ -150,7 +156,7 @@ class GastoServiceTest {
 
         CrearGastoDTO dto = CrearGastoDTO.builder()
                 .descripcion("Alquiler mensual")
-                .monto(30000.0)
+                .monto(BigDecimal.valueOf(30000.0))
                 .pagadorId(1L)
                 .regla(ReglaDivision.PROPORCIONAL_INGRESOS)
                 .participantes(Arrays.asList(
@@ -163,8 +169,8 @@ class GastoServiceTest {
 
         assertNotNull(resultado);
         assertEquals(2, resultado.getParticipantes().size());
-        assertEquals(20000.0, resultado.getParticipantes().get(0).getImporte());
-        assertEquals(10000.0, resultado.getParticipantes().get(1).getImporte());
+        assertEquals(20000.0, resultado.getParticipantes().get(0).getImporte().doubleValue());
+        assertEquals(10000.0, resultado.getParticipantes().get(1).getImporte().doubleValue());
     }
 
     /**
@@ -179,7 +185,7 @@ class GastoServiceTest {
 
         CrearGastoDTO dto = CrearGastoDTO.builder()
                 .descripcion("Taxi Juan y Maria")
-                .monto(5000.0)
+                .monto(BigDecimal.valueOf(5000.0))
                 .pagadorId(1L)
                 .regla(ReglaDivision.PARTICIPACION_PARCIAL)
                 .participantes(Arrays.asList(
@@ -192,8 +198,8 @@ class GastoServiceTest {
 
         assertNotNull(resultado);
         assertEquals(2, resultado.getParticipantes().size());
-        assertEquals(2500.0, resultado.getParticipantes().get(0).getImporte());
-        assertEquals(2500.0, resultado.getParticipantes().get(1).getImporte());
+        assertEquals(2500.0, resultado.getParticipantes().get(0).getImporte().doubleValue());
+        assertEquals(2500.0, resultado.getParticipantes().get(1).getImporte().doubleValue());
     }
 
     /**
@@ -208,20 +214,20 @@ class GastoServiceTest {
 
         CrearGastoDTO dto = CrearGastoDTO.builder()
                 .descripcion("Servicio streaming")
-                .monto(1000.0)
+                .monto(BigDecimal.valueOf(1000.0))
                 .pagadorId(1L)
                 .regla(ReglaDivision.PERSONALIZADA)
                 .participantes(Arrays.asList(
-                        GastoParticipanteDTO.builder().usuarioId(1L).porcentaje(70.0).build(),
-                        GastoParticipanteDTO.builder().usuarioId(2L).porcentaje(30.0).build()
+                        GastoParticipanteDTO.builder().usuarioId(1L).porcentaje(BigDecimal.valueOf(70.0)).build(),
+                        GastoParticipanteDTO.builder().usuarioId(2L).porcentaje(BigDecimal.valueOf(30.0)).build()
                 ))
                 .build();
 
         GastoDetalleDTO resultado = gastoService.registrarGasto(1L, dto);
 
         assertNotNull(resultado);
-        assertEquals(700.0, resultado.getParticipantes().get(0).getImporte());
-        assertEquals(300.0, resultado.getParticipantes().get(1).getImporte());
+        assertEquals(700.0, resultado.getParticipantes().get(0).getImporte().doubleValue());
+        assertEquals(300.0, resultado.getParticipantes().get(1).getImporte().doubleValue());
     }
 
     /**
@@ -235,12 +241,12 @@ class GastoServiceTest {
 
         CrearGastoDTO dto = CrearGastoDTO.builder()
                 .descripcion("Servicio streaming")
-                .monto(1000.0)
+                .monto(BigDecimal.valueOf(1000.0))
                 .pagadorId(1L)
                 .regla(ReglaDivision.PERSONALIZADA)
                 .participantes(Arrays.asList(
-                        GastoParticipanteDTO.builder().usuarioId(1L).porcentaje(50.0).build(),
-                        GastoParticipanteDTO.builder().usuarioId(2L).porcentaje(30.0).build()
+                        GastoParticipanteDTO.builder().usuarioId(1L).porcentaje(BigDecimal.valueOf(50.0)).build(),
+                        GastoParticipanteDTO.builder().usuarioId(2L).porcentaje(BigDecimal.valueOf(30.0)).build()
                 ))
                 .build();
 
@@ -260,7 +266,7 @@ class GastoServiceTest {
         Gasto gasto1 = Gasto.builder()
                 .id(1L)
                 .descripcion("Gasto periodo")
-                .monto(1500.0)
+                .monto(BigDecimal.valueOf(1500.0))
                 .fecha(LocalDate.of(2026, 9, 5))
                 .espacio(espacio)
                 .pagador(usuario1)
@@ -296,5 +302,56 @@ class GastoServiceTest {
         when(gastoRepository.existsById(999L)).thenReturn(false);
 
         assertThrows(RecursoNoEncontradoException.class, () -> gastoService.eliminarGasto(999L));
+    }
+
+    /**
+     * Prueba que el registro de un gasto fechado dentro de un periodo cerrado sea rechazado.
+     */
+    @Test
+    void registrarGasto_FechaDentroDePeriodoCerrado_LanzaPeriodoCerradoException() {
+        when(espacioRepository.findById(1L)).thenReturn(Optional.of(espacio));
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario1));
+        when(periodoRepository.findByEspacioIdAndAnioAndMesAndEstado(1L, 2026, 9, com.example.fairshareapp.model.enums.EstadoPeriodo.CERRADO))
+                .thenReturn(Optional.of(com.example.fairshareapp.model.entity.Periodo.builder().id(5L).build()));
+
+        CrearGastoDTO dto = CrearGastoDTO.builder()
+                .descripcion("Cena compartida")
+                .monto(BigDecimal.valueOf(100.0))
+                .fecha(LocalDate.of(2026, 9, 15))
+                .pagadorId(1L)
+                .participantes(Arrays.asList(GastoParticipanteDTO.builder().usuarioId(1L).build()))
+                .build();
+
+        assertThrows(com.example.fairshareapp.exception.PeriodoCerradoException.class,
+                () -> gastoService.registrarGasto(1L, dto));
+    }
+
+    /**
+     * Prueba que el registro de un gasto fechado fuera de cualquier periodo cerrado se procese con normalidad.
+     */
+    @Test
+    void registrarGasto_FechaFueraDePeriodoCerrado_RegistraNormalmente() {
+        when(espacioRepository.findById(1L)).thenReturn(Optional.of(espacio));
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario1));
+        when(periodoRepository.findByEspacioIdAndAnioAndMesAndEstado(1L, 2026, 9, com.example.fairshareapp.model.enums.EstadoPeriodo.CERRADO))
+                .thenReturn(Optional.empty());
+        when(gastoRepository.save(any(Gasto.class))).thenAnswer(invocation -> {
+            Gasto g = invocation.getArgument(0);
+            g.setId(30L);
+            return g;
+        });
+
+        CrearGastoDTO dto = CrearGastoDTO.builder()
+                .descripcion("Cena compartida")
+                .monto(BigDecimal.valueOf(100.0))
+                .fecha(LocalDate.of(2026, 9, 15))
+                .pagadorId(1L)
+                .participantes(Arrays.asList(GastoParticipanteDTO.builder().usuarioId(1L).build()))
+                .build();
+
+        GastoDetalleDTO resultado = gastoService.registrarGasto(1L, dto);
+
+        assertNotNull(resultado);
+        assertEquals(30L, resultado.getId());
     }
 }

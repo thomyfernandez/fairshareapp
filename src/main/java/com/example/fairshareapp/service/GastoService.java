@@ -1,5 +1,6 @@
 package com.example.fairshareapp.service;
 
+import com.example.fairshareapp.exception.PeriodoCerradoException;
 import com.example.fairshareapp.exception.RecursoNoEncontradoException;
 import com.example.fairshareapp.exception.ReglaInvalidaException;
 import com.example.fairshareapp.model.dto.CrearGastoDTO;
@@ -9,11 +10,13 @@ import com.example.fairshareapp.model.entity.Categoria;
 import com.example.fairshareapp.model.entity.Espacio;
 import com.example.fairshareapp.model.entity.Gasto;
 import com.example.fairshareapp.model.entity.GastoParticipante;
+import com.example.fairshareapp.model.enums.EstadoPeriodo;
 import com.example.fairshareapp.model.enums.ReglaDivision;
 import com.example.fairshareapp.model.entity.Usuario;
 import com.example.fairshareapp.repository.CategoriaRepository;
 import com.example.fairshareapp.repository.EspacioRepository;
 import com.example.fairshareapp.repository.GastoRepository;
+import com.example.fairshareapp.repository.PeriodoRepository;
 import com.example.fairshareapp.repository.UsuarioRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,6 +40,7 @@ public class GastoService {
     private final EspacioRepository espacioRepository;
     private final UsuarioRepository usuarioRepository;
     private final CategoriaRepository categoriaRepository;
+    private final PeriodoRepository periodoRepository;
 
     /**
      * Constructor con inyeccion de dependencias de los repositorios requeridos.
@@ -45,15 +49,18 @@ public class GastoService {
      * @param espacioRepository Repositorio de persistencia de espacios.
      * @param usuarioRepository Repositorio de persistencia de usuarios.
      * @param categoriaRepository Repositorio de persistencia de categorias.
+     * @param periodoRepository Repositorio de persistencia de periodos, usado para bloquear altas en periodos cerrados.
      */
     public GastoService(GastoRepository gastoRepository,
                         EspacioRepository espacioRepository,
                         UsuarioRepository usuarioRepository,
-                        CategoriaRepository categoriaRepository) {
+                        CategoriaRepository categoriaRepository,
+                        PeriodoRepository periodoRepository) {
         this.gastoRepository = gastoRepository;
         this.espacioRepository = espacioRepository;
         this.usuarioRepository = usuarioRepository;
         this.categoriaRepository = categoriaRepository;
+        this.periodoRepository = periodoRepository;
     }
 
     /**
@@ -81,6 +88,12 @@ public class GastoService {
 
         LocalDate fechaGasto = dto.getFecha() != null ? dto.getFecha() : LocalDate.now();
         ReglaDivision regla = dto.getRegla() != null ? dto.getRegla() : ReglaDivision.EQUITATIVA;
+
+        periodoRepository.findByEspacioIdAndAnioAndMesAndEstado(
+                        espacioId, fechaGasto.getYear(), fechaGasto.getMonthValue(), EstadoPeriodo.CERRADO)
+                .ifPresent(periodoCerrado -> {
+                    throw new PeriodoCerradoException(espacioId, fechaGasto.getYear(), fechaGasto.getMonthValue());
+                });
 
         Gasto nuevoGasto = Gasto.builder()
                 .descripcion(dto.getDescripcion().trim())

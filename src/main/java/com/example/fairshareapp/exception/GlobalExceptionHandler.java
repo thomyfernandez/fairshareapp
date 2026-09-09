@@ -56,6 +56,17 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Maneja excepciones cuando se intenta registrar un gasto dentro de un periodo ya cerrado.
+     *
+     * @param ex Excepcion capturada.
+     * @return Respuesta con codigo HTTP 409 Conflict.
+     */
+    @ExceptionHandler(PeriodoCerradoException.class)
+    public ResponseEntity<String> handlePeriodoCerrado(PeriodoCerradoException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
+    }
+
+    /**
      * Maneja argumentos ilegales o parametros invalidos enviados a la API.
      *
      * @param ex Excepcion capturada.
