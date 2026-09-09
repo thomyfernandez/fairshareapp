@@ -155,6 +155,19 @@ docker compose up --build
 | `PUT` | `/api/v1/favoritos/{id}/actualizar-monto` | Actualiza montos base/variable y renueva la fecha de revision del ciclo |
 | `DELETE` | `/api/v1/favoritos/{id}` | Elimina una plantilla favorita del sistema |
 
+### 8. Periodos, Presupuestos y Liquidacion
+| Metodo | Endpoint | Descripcion |
+| :--- | :--- | :--- |
+| `POST` | `/api/v1/espacios/{id}/periodos` | Abre un nuevo periodo mensual (anio/mes) para el espacio |
+| `GET` | `/api/v1/espacios/{id}/periodos` | Lista los periodos del espacio, del mas reciente al mas antiguo |
+| `GET` | `/api/v1/espacios/{id}/periodos/{periodoId}` | Obtiene el detalle de un periodo |
+| `POST` | `/api/v1/espacios/{id}/periodos/{periodoId}/cierre` | Cierra el periodo (bloquea nuevos gastos en su rango) y genera su liquidacion |
+| `PUT` | `/api/v1/espacios/{id}/presupuestos/usuarios/{usuarioId}?anio=&mes=` | Fija (crea o actualiza) el presupuesto mensual de un usuario en el espacio |
+| `GET` | `/api/v1/espacios/{id}/presupuestos?anio=&mes=` | Lista los presupuestos del espacio, con filtro opcional por anio/mes |
+| `GET` | `/api/v1/espacios/{id}/liquidaciones` | Lista las liquidaciones historicas generadas para el espacio |
+| `GET` | `/api/v1/espacios/{id}/liquidaciones/preview?anio=&mes=` | Previsualiza el calculo de liquidacion de un periodo aun abierto, sin persistirlo |
+| `GET` | `/api/v1/liquidaciones/{liquidacionId}` | Obtiene el detalle completo de una liquidacion (transferencias y resumen de presupuesto por usuario) |
+
 ---
 
 ## Pruebas con Postman
