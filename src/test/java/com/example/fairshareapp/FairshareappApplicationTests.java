@@ -23,6 +23,7 @@ class FairshareappApplicationTests {
 
 	@Test
 	void contextLoads() {
+		// Metodo intencionalmente vacio para comprobar la correcta inicializacion del contexto de Spring.
 	}
 
 	/** Verifica que el nombre interno conserve la columna y la propiedad JSON existentes. */

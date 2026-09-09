@@ -8,7 +8,7 @@ import com.example.fairshareapp.model.dto.GastoParticipanteDTO;
 import com.example.fairshareapp.model.entity.Categoria;
 import com.example.fairshareapp.model.entity.Espacio;
 import com.example.fairshareapp.model.entity.Gasto;
-import com.example.fairshareapp.model.entity.ReglaDivision;
+import com.example.fairshareapp.model.enums.ReglaDivision;
 import com.example.fairshareapp.model.entity.Usuario;
 import com.example.fairshareapp.repository.CategoriaRepository;
 import com.example.fairshareapp.repository.EspacioRepository;
@@ -21,6 +21,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
@@ -73,7 +74,7 @@ class GastoServiceTest {
                 .nombre("Juan")
                 .apellido("Perez")
                 .email("juan@test.com")
-                .sueldo(200000.0)
+                .sueldo(BigDecimal.valueOf(200000.0))
                 .build();
 
         usuario2 = Usuario.builder()
@@ -81,7 +82,7 @@ class GastoServiceTest {
                 .nombre("Maria")
                 .apellido("Gomez")
                 .email("maria@test.com")
-                .sueldo(100000.0)
+                .sueldo(BigDecimal.valueOf(100000.0))
                 .build();
 
         usuario3 = Usuario.builder()
@@ -89,7 +90,7 @@ class GastoServiceTest {
                 .nombre("Lucas")
                 .apellido("Diaz")
                 .email("lucas@test.com")
-                .sueldo(100000.0)
+                .sueldo(BigDecimal.valueOf(100000.0))
                 .build();
 
         categoria = Categoria.builder().id(1L).nombre("Supermercado").build();
@@ -113,7 +114,7 @@ class GastoServiceTest {
 
         CrearGastoDTO dto = CrearGastoDTO.builder()
                 .descripcion("Cena compartida")
-                .monto(100.0)
+                .monto(BigDecimal.valueOf(100.0))
                 .pagadorId(1L)
                 .categoriaId(1L)
                 .regla(ReglaDivision.EQUITATIVA)
@@ -129,9 +130,9 @@ class GastoServiceTest {
         assertNotNull(resultado);
         assertEquals(3, resultado.getParticipantes().size());
         // El primer participante absorbe el ajuste de centavo (33.34 + 33.33 + 33.33 = 100.00)
-        assertEquals(33.34, resultado.getParticipantes().get(0).getImporte());
-        assertEquals(33.33, resultado.getParticipantes().get(1).getImporte());
-        assertEquals(33.33, resultado.getParticipantes().get(2).getImporte());
+        assertEquals(33.34, resultado.getParticipantes().get(0).getImporte().doubleValue(), 0.01);
+        assertEquals(33.33, resultado.getParticipantes().get(1).getImporte().doubleValue(), 0.01);
+        assertEquals(33.33, resultado.getParticipantes().get(2).getImporte().doubleValue(), 0.01);
     }
 
     /**
@@ -150,7 +151,7 @@ class GastoServiceTest {
 
         CrearGastoDTO dto = CrearGastoDTO.builder()
                 .descripcion("Alquiler mensual")
-                .monto(30000.0)
+                .monto(BigDecimal.valueOf(30000.0))
                 .pagadorId(1L)
                 .regla(ReglaDivision.PROPORCIONAL_INGRESOS)
                 .participantes(Arrays.asList(
@@ -163,8 +164,8 @@ class GastoServiceTest {
 
         assertNotNull(resultado);
         assertEquals(2, resultado.getParticipantes().size());
-        assertEquals(20000.0, resultado.getParticipantes().get(0).getImporte());
-        assertEquals(10000.0, resultado.getParticipantes().get(1).getImporte());
+        assertEquals(20000.0, resultado.getParticipantes().get(0).getImporte().doubleValue(), 0.01);
+        assertEquals(10000.0, resultado.getParticipantes().get(1).getImporte().doubleValue(), 0.01);
     }
 
     /**
@@ -179,7 +180,7 @@ class GastoServiceTest {
 
         CrearGastoDTO dto = CrearGastoDTO.builder()
                 .descripcion("Taxi Juan y Maria")
-                .monto(5000.0)
+                .monto(BigDecimal.valueOf(5000.0))
                 .pagadorId(1L)
                 .regla(ReglaDivision.PARTICIPACION_PARCIAL)
                 .participantes(Arrays.asList(
@@ -192,8 +193,8 @@ class GastoServiceTest {
 
         assertNotNull(resultado);
         assertEquals(2, resultado.getParticipantes().size());
-        assertEquals(2500.0, resultado.getParticipantes().get(0).getImporte());
-        assertEquals(2500.0, resultado.getParticipantes().get(1).getImporte());
+        assertEquals(2500.0, resultado.getParticipantes().get(0).getImporte().doubleValue(), 0.01);
+        assertEquals(2500.0, resultado.getParticipantes().get(1).getImporte().doubleValue(), 0.01);
     }
 
     /**
@@ -208,20 +209,20 @@ class GastoServiceTest {
 
         CrearGastoDTO dto = CrearGastoDTO.builder()
                 .descripcion("Servicio streaming")
-                .monto(1000.0)
+                .monto(BigDecimal.valueOf(1000.0))
                 .pagadorId(1L)
                 .regla(ReglaDivision.PERSONALIZADA)
                 .participantes(Arrays.asList(
-                        GastoParticipanteDTO.builder().usuarioId(1L).porcentaje(70.0).build(),
-                        GastoParticipanteDTO.builder().usuarioId(2L).porcentaje(30.0).build()
+                        GastoParticipanteDTO.builder().usuarioId(1L).porcentaje(BigDecimal.valueOf(70.0)).build(),
+                        GastoParticipanteDTO.builder().usuarioId(2L).porcentaje(BigDecimal.valueOf(30.0)).build()
                 ))
                 .build();
 
         GastoDetalleDTO resultado = gastoService.registrarGasto(1L, dto);
 
         assertNotNull(resultado);
-        assertEquals(700.0, resultado.getParticipantes().get(0).getImporte());
-        assertEquals(300.0, resultado.getParticipantes().get(1).getImporte());
+        assertEquals(700.0, resultado.getParticipantes().get(0).getImporte().doubleValue(), 0.01);
+        assertEquals(300.0, resultado.getParticipantes().get(1).getImporte().doubleValue(), 0.01);
     }
 
     /**
@@ -235,12 +236,12 @@ class GastoServiceTest {
 
         CrearGastoDTO dto = CrearGastoDTO.builder()
                 .descripcion("Servicio streaming")
-                .monto(1000.0)
+                .monto(BigDecimal.valueOf(1000.0))
                 .pagadorId(1L)
                 .regla(ReglaDivision.PERSONALIZADA)
                 .participantes(Arrays.asList(
-                        GastoParticipanteDTO.builder().usuarioId(1L).porcentaje(50.0).build(),
-                        GastoParticipanteDTO.builder().usuarioId(2L).porcentaje(30.0).build()
+                        GastoParticipanteDTO.builder().usuarioId(1L).porcentaje(BigDecimal.valueOf(50.0)).build(),
+                        GastoParticipanteDTO.builder().usuarioId(2L).porcentaje(BigDecimal.valueOf(30.0)).build()
                 ))
                 .build();
 
@@ -259,20 +260,20 @@ class GastoServiceTest {
 
         CrearGastoDTO dto = CrearGastoDTO.builder()
                 .descripcion("Compra personalizada")
-                .monto(1000.0)
+                .monto(BigDecimal.valueOf(1000.0))
                 .pagadorId(1L)
                 .regla(ReglaDivision.PERSONALIZADA)
                 .participantes(Arrays.asList(
-                        GastoParticipanteDTO.builder().usuarioId(1L).importe(600.0).build(),
-                        GastoParticipanteDTO.builder().usuarioId(2L).importe(400.0).build()
+                        GastoParticipanteDTO.builder().usuarioId(1L).importe(BigDecimal.valueOf(600.0)).build(),
+                        GastoParticipanteDTO.builder().usuarioId(2L).importe(BigDecimal.valueOf(400.0)).build()
                 ))
                 .build();
 
         GastoDetalleDTO resultado = gastoService.registrarGasto(1L, dto);
 
         assertNotNull(resultado);
-        assertEquals(600.0, resultado.getParticipantes().get(0).getImporte());
-        assertEquals(400.0, resultado.getParticipantes().get(1).getImporte());
+        assertEquals(600.0, resultado.getParticipantes().get(0).getImporte().doubleValue(), 0.01);
+        assertEquals(400.0, resultado.getParticipantes().get(1).getImporte().doubleValue(), 0.01);
     }
 
     /**
@@ -286,12 +287,12 @@ class GastoServiceTest {
 
         CrearGastoDTO dto = CrearGastoDTO.builder()
                 .descripcion("Compra personalizada")
-                .monto(1000.0)
+                .monto(BigDecimal.valueOf(1000.0))
                 .pagadorId(1L)
                 .regla(ReglaDivision.PERSONALIZADA)
                 .participantes(Arrays.asList(
-                        GastoParticipanteDTO.builder().usuarioId(1L).importe(500.0).build(),
-                        GastoParticipanteDTO.builder().usuarioId(2L).importe(400.0).build()
+                        GastoParticipanteDTO.builder().usuarioId(1L).importe(BigDecimal.valueOf(500.0)).build(),
+                        GastoParticipanteDTO.builder().usuarioId(2L).importe(BigDecimal.valueOf(400.0)).build()
                 ))
                 .build();
 
@@ -309,7 +310,7 @@ class GastoServiceTest {
 
         CrearGastoDTO dto = CrearGastoDTO.builder()
                 .descripcion("Compra personalizada")
-                .monto(1000.0)
+                .monto(BigDecimal.valueOf(1000.0))
                 .pagadorId(1L)
                 .regla(ReglaDivision.PERSONALIZADA)
                 .participantes(Arrays.asList(
@@ -334,7 +335,7 @@ class GastoServiceTest {
         Gasto gasto1 = Gasto.builder()
                 .id(1L)
                 .descripcion("Gasto periodo")
-                .monto(1500.0)
+                .monto(BigDecimal.valueOf(1500.0))
                 .fecha(LocalDate.of(2026, 9, 5))
                 .espacio(espacio)
                 .pagador(usuario1)

@@ -102,9 +102,9 @@ docker compose up --build
 ### 2. Gestion de Usuarios
 | Metodo | Endpoint | Descripcion |
 | :--- | :--- | :--- |
-| `POST` | `/api/usuario/registro` | Registra un nuevo usuario en la base de datos |
-| `POST` | `/api/usuario/login` | Valida credenciales de acceso de un usuario |
-| `GET` | `/api/usuario/get` | Retorna el listado completo de usuarios |
+| `POST` | `/api/v1/usuarios/registro` | Registra un nuevo usuario en la base de datos (compatible con `/api/usuario/registro`) |
+| `POST` | `/api/v1/usuarios/login` | Valida credenciales de acceso de un usuario (compatible con `/api/usuario/login`) |
+| `GET` | `/api/v1/usuarios` | Retorna el listado completo de usuarios (compatible con `/api/usuario/get`) |
 
 ### 3. Gestion de Espacios
 | Metodo | Endpoint | Descripcion |
@@ -116,7 +116,15 @@ docker compose up --build
 | `PATCH` | `/api/v1/espacios/{id}/regla-distribucion` | Modifica la regla de distribucion (50/50 vs. Proporcional) |
 | `PATCH` | `/api/v1/espacios/{id}/presupuesto-base` | Fija o actualiza el presupuesto base del espacio |
 
-### 4. Gestion de Sueldos
+### 4. Gestion de Miembros de Espacio
+| Metodo | Endpoint | Descripcion |
+| :--- | :--- | :--- |
+| `POST` | `/api/v1/espacios/{id}/unirse` | Une a un usuario al espacio validando el codigo de invitacion |
+| `GET` | `/api/v1/espacios/{id}/miembros` | Lista los miembros pertenecientes a un espacio |
+| `PUT` | `/api/v1/espacios/{id}/miembros/{usuarioId}/sueldo` | Registra o actualiza el sueldo mensual declarado del miembro |
+| `PATCH` | `/api/v1/espacios/{id}/miembros/{usuarioId}/rol` | Asigna o modifica el rol del miembro (ADMIN o MIEMBRO) |
+
+### 5. Gestion de Sueldos
 | Metodo | Endpoint | Descripcion |
 | :--- | :--- | :--- |
 | `POST` | `/api/sueldos` | Registra el sueldo de un usuario y sincroniza la tasa proporcional |
@@ -124,7 +132,7 @@ docker compose up --build
 | `PUT` | `/api/sueldos/{id}` | Actualiza monto, periodicidad o tipo de sueldo |
 | `DELETE` | `/api/sueldos/{id}` | Elimina un registro de sueldo |
 
-### 5. Gestion de Gastos
+### 6. Gestion de Gastos
 | Metodo | Endpoint | Descripcion |
 | :--- | :--- | :--- |
 | `POST` | `/api/v1/espacios/{id}/gastos` | Registra un gasto individual con calculo de participantes |
@@ -133,7 +141,7 @@ docker compose up --build
 | `GET` | `/api/v1/gastos/{id}` | Obtiene el detalle de un gasto y el desglose por participante |
 | `DELETE` | `/api/v1/gastos/{id}` | Elimina un gasto del sistema |
 
-### 6. Motor de Balances y Deudas
+### 7. Motor de Balances y Deudas
 | Metodo | Endpoint | Descripcion |
 | :--- | :--- | :--- |
 | `GET` | `/api/v1/espacios/{id}/balance` | Calcula y retorna la matriz simplificada de deudas pendientes del espacio |

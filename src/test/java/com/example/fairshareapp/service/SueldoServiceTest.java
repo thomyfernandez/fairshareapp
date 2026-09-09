@@ -61,7 +61,7 @@ class SueldoServiceTest {
                 .id(1L)
                 .nombre("Martin")
                 .email("martin@test.com")
-                .sueldo(0.0)
+                .sueldo(BigDecimal.ZERO)
                 .build();
 
         sueldo = Sueldo.builder()
@@ -94,7 +94,7 @@ class SueldoServiceTest {
 
         assertNotNull(response);
         assertEquals(BigDecimal.valueOf(850000.00), response.getMonto());
-        assertEquals(850000.00, usuario.getSueldo());
+        assertEquals(BigDecimal.valueOf(850000.00), usuario.getSueldo());
         verify(usuarioRepository).save(usuario);
         verify(sueldoRepository).save(any(Sueldo.class));
     }

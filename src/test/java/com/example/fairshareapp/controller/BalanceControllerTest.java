@@ -5,7 +5,7 @@ import com.example.fairshareapp.exception.RecursoNoEncontradoException;
 import com.example.fairshareapp.exception.ReglaInvalidaException;
 import com.example.fairshareapp.model.dto.BalanceDTO;
 import com.example.fairshareapp.model.dto.DeudaDetalleDTO;
-import com.example.fairshareapp.model.entity.EstadoDeuda;
+import com.example.fairshareapp.model.enums.EstadoDeuda;
 import com.example.fairshareapp.service.BalanceService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,6 +17,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -63,7 +64,7 @@ class BalanceControllerTest {
                 .deudorNombre("Maria Gomez")
                 .acreedorId(1L)
                 .acreedorNombre("Juan Perez")
-                .monto(500.0)
+                .monto(BigDecimal.valueOf(500.0))
                 .estado(EstadoDeuda.PENDIENTE)
                 .build();
 
@@ -101,7 +102,7 @@ class BalanceControllerTest {
         DeudaDetalleDTO deuda = DeudaDetalleDTO.builder()
                 .id(1L)
                 .estado(EstadoDeuda.SALDADO)
-                .monto(0.0)
+                .monto(BigDecimal.ZERO)
                 .build();
 
         when(balanceService.registrarPago(eq(1L), any())).thenReturn(deuda);

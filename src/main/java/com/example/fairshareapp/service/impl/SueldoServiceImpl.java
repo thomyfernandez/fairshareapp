@@ -66,7 +66,7 @@ public class SueldoServiceImpl implements SueldoService {
 
         // Sincroniza el sueldo en el usuario para calculos proporcionales
         if (sueldoRequest.getMonto() != null) {
-            usuario.setSueldo(sueldoRequest.getMonto().doubleValue());
+            usuario.setSueldo(sueldoRequest.getMonto());
             usuarioRepository.save(usuario);
         }
 
@@ -129,7 +129,7 @@ public class SueldoServiceImpl implements SueldoService {
 
         if (sueldo.getUsuario() != null && sueldoRequest.getMonto() != null) {
             Usuario usuario = sueldo.getUsuario();
-            usuario.setSueldo(sueldoRequest.getMonto().doubleValue());
+            usuario.setSueldo(sueldoRequest.getMonto());
             usuarioRepository.save(usuario);
         }
 

@@ -1,11 +1,13 @@
 package com.example.fairshareapp.model.dto;
 
-import com.example.fairshareapp.model.entity.EstadoDeuda;
+import com.example.fairshareapp.model.enums.EstadoDeuda;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.math.BigDecimal;
 
 /**
  * Objeto de transferencia de datos con el detalle de una deuda entre dos usuarios de un espacio.
@@ -22,7 +24,7 @@ public class DeudaDetalleDTO {
     private String deudorNombre;
     private Long acreedorId;
     private String acreedorNombre;
-    private Double monto;
+    private BigDecimal monto;
     private EstadoDeuda estado;
     private Long liquidacionId;
 }

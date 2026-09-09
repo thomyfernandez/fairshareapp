@@ -5,7 +5,7 @@ import com.example.fairshareapp.exception.ReglaInvalidaException;
 import com.example.fairshareapp.model.dto.BalanceDTO;
 import com.example.fairshareapp.model.dto.DeudaDetalleDTO;
 import com.example.fairshareapp.model.dto.RegistrarPagoDTO;
-import com.example.fairshareapp.model.entity.EstadoDeuda;
+import com.example.fairshareapp.model.enums.EstadoDeuda;
 import com.example.fairshareapp.model.entity.Espacio;
 import com.example.fairshareapp.model.entity.Gasto;
 import com.example.fairshareapp.model.entity.GastoParticipante;
@@ -100,9 +100,9 @@ public class BalanceService {
             throw new ReglaInvalidaException("La deuda con id " + saldoDeudaId + " ya se encuentra saldada");
         }
 
-        BigDecimal montoPendiente = BigDecimal.valueOf(deuda.getMonto());
+        BigDecimal montoPendiente = deuda.getMonto();
         BigDecimal montoPagado = (dto != null && dto.getMonto() != null)
-                ? BigDecimal.valueOf(dto.getMonto())
+                ? dto.getMonto()
                 : montoPendiente;
 
         if (montoPagado.compareTo(BigDecimal.ZERO) <= 0) {
@@ -115,10 +115,10 @@ public class BalanceService {
 
         BigDecimal nuevoPendiente = montoPendiente.subtract(montoPagado).setScale(2, RoundingMode.HALF_UP);
         if (nuevoPendiente.compareTo(TOLERANCIA) <= 0) {
-            deuda.setMonto(0.0);
+            deuda.setMonto(BigDecimal.ZERO);
             deuda.setEstado(EstadoDeuda.SALDADO);
         } else {
-            deuda.setMonto(nuevoPendiente.doubleValue());
+            deuda.setMonto(nuevoPendiente);
         }
 
         if (dto != null && dto.getLiquidacionId() != null) {
@@ -150,7 +150,7 @@ public class BalanceService {
                 Usuario usuario = participante.getUsuario();
                 usuariosPorId.put(usuario.getId(), usuario);
 
-                BigDecimal importe = BigDecimal.valueOf(participante.getImporte());
+                BigDecimal importe = participante.getImporte();
                 saldosNetos.merge(usuario.getId(), importe.negate(), BigDecimal::add);
                 saldosNetos.merge(pagador.getId(), importe, BigDecimal::add);
             }
@@ -232,15 +232,15 @@ public class BalanceService {
             SaldoDeuda existente = pendientesPorPar.remove(clave);
 
             if (existente != null) {
-                BigDecimal delta = transaccion.monto.subtract(BigDecimal.valueOf(existente.getMontoOriginal()));
-                BigDecimal nuevoPendiente = BigDecimal.valueOf(existente.getMonto()).add(delta).max(BigDecimal.ZERO);
+                BigDecimal delta = transaccion.monto.subtract(existente.getMontoOriginal());
+                BigDecimal nuevoPendiente = existente.getMonto().add(delta).max(BigDecimal.ZERO);
 
-                existente.setMontoOriginal(transaccion.monto.doubleValue());
+                existente.setMontoOriginal(transaccion.monto);
                 if (nuevoPendiente.compareTo(TOLERANCIA) <= 0) {
-                    existente.setMonto(0.0);
+                    existente.setMonto(BigDecimal.ZERO);
                     existente.setEstado(EstadoDeuda.SALDADO);
                 } else {
-                    existente.setMonto(nuevoPendiente.setScale(2, RoundingMode.HALF_UP).doubleValue());
+                    existente.setMonto(nuevoPendiente.setScale(2, RoundingMode.HALF_UP));
                 }
                 vigentes.add(saldoDeudaRepository.save(existente));
             } else {
@@ -248,8 +248,8 @@ public class BalanceService {
                         .espacio(espacio)
                         .deudor(usuariosPorId.get(transaccion.deudorId))
                         .acreedor(usuariosPorId.get(transaccion.acreedorId))
-                        .montoOriginal(transaccion.monto.doubleValue())
-                        .monto(transaccion.monto.doubleValue())
+                        .montoOriginal(transaccion.monto)
+                        .monto(transaccion.monto)
                         .estado(EstadoDeuda.PENDIENTE)
                         .build();
                 vigentes.add(saldoDeudaRepository.save(nueva));
@@ -258,7 +258,7 @@ public class BalanceService {
 
         // Las deudas que quedaron sin transaccion simplificada equivalente ya no tienen vigencia
         for (SaldoDeuda obsoleta : pendientesPorPar.values()) {
-            obsoleta.setMonto(0.0);
+            obsoleta.setMonto(BigDecimal.ZERO);
             obsoleta.setEstado(EstadoDeuda.SALDADO);
             saldoDeudaRepository.save(obsoleta);
         }

@@ -37,22 +37,6 @@ public class Sueldo {
     @Column(name = "fecha_inicio")
     private LocalDate fechaInicio;
 
-    public TipoSueldo getTipo() {
-        return tipo;
-    }
-
-    public void setTipo(TipoSueldo tipo) {
-        this.tipo = tipo;
-    }
-
-    public FrecuenciaSueldo getFrecuencia() {
-        return frecuencia;
-    }
-
-    public void setFrecuencia(FrecuenciaSueldo frecuencia) {
-        this.frecuencia = frecuencia;
-    }
-
     // toSueldoResponse
     public SueldoResponse toSueldoResponse() {
         SueldoResponse sueldoResponse = new SueldoResponse();

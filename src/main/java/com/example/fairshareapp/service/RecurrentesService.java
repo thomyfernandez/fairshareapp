@@ -8,14 +8,10 @@ import com.example.fairshareapp.model.dto.GastoDetalleDTO;
 import com.example.fairshareapp.model.dto.GastoParticipanteDTO;
 import com.example.fairshareapp.model.dto.PlantillaGastoDTO;
 import com.example.fairshareapp.model.dto.ServicioVencimientoDTO;
-import com.example.fairshareapp.model.entity.PlantillaGastoRecurrente;
-import com.example.fairshareapp.model.entity.ReglaDivision;
-import com.example.fairshareapp.model.entity.Servicio;
-import com.example.fairshareapp.model.entity.Usuario;
-import com.example.fairshareapp.repository.EspacioRepository;
-import com.example.fairshareapp.repository.PlantillaGastoRepository;
-import com.example.fairshareapp.repository.ServicioRepository;
-import com.example.fairshareapp.repository.UsuarioRepository;
+import com.example.fairshareapp.model.entity.*;
+import com.example.fairshareapp.model.enums.ReglaDivision;
+import com.example.fairshareapp.repository.*;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,6 +29,7 @@ import java.util.List;
  */
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class RecurrentesService {
 
     private static final String PLANTILLA_NO_ENCONTRADA = "Plantilla favorita no encontrada con id: ";
@@ -41,28 +38,8 @@ public class RecurrentesService {
     private final ServicioRepository servicioRepository;
     private final EspacioRepository espacioRepository;
     private final UsuarioRepository usuarioRepository;
+    private final CategoriaRepository categoriaRepository;
     private final GastoService gastoService;
-
-    /**
-     * Constructor con inyeccion de dependencias de los componentes requeridos.
-     *
-     * @param plantillaRepository Repositorio de plantillas de gastos.
-     * @param servicioRepository Repositorio de catalogo de servicios.
-     * @param espacioRepository Repositorio de espacios compartidos.
-     * @param usuarioRepository Repositorio de usuarios.
-     * @param gastoService Servicio de logica de gastos.
-     */
-    public RecurrentesService(PlantillaGastoRepository plantillaRepository,
-                              ServicioRepository servicioRepository,
-                              EspacioRepository espacioRepository,
-                              UsuarioRepository usuarioRepository,
-                              GastoService gastoService) {
-        this.plantillaRepository = plantillaRepository;
-        this.servicioRepository = servicioRepository;
-        this.espacioRepository = espacioRepository;
-        this.usuarioRepository = usuarioRepository;
-        this.gastoService = gastoService;
-    }
 
     /**
      * Guarda una plantilla de gasto como favorita asociada a un espacio compartido.
@@ -77,6 +54,21 @@ public class RecurrentesService {
             throw new RecursoNoEncontradoException("Espacio no encontrado con id: " + dto.getEspacioId());
         }
 
+        Espacio espacio = espacioRepository.findById(dto.getEspacioId())
+                .orElseGet(() -> Espacio.builder().id(dto.getEspacioId()).build());
+
+        Usuario pagador = null;
+        if (dto.getPagadorId() != null) {
+            pagador = usuarioRepository.findById(dto.getPagadorId())
+                    .orElseThrow(() -> new RecursoNoEncontradoException("Pagador no encontrado con id: " + dto.getPagadorId()));
+        }
+
+        Categoria categoria = null;
+        if (dto.getCategoriaId() != null) {
+            categoria = categoriaRepository.findById(dto.getCategoriaId())
+                    .orElseThrow(() -> new RecursoNoEncontradoException("Categoria no encontrada con id: " + dto.getCategoriaId()));
+        }
+
         Servicio servicio = null;
         if (dto.getServicioId() != null) {
             servicio = servicioRepository.findById(dto.getServicioId())
@@ -89,10 +81,10 @@ public class RecurrentesService {
                 .montoBase(dto.getMontoBase())
                 .montoVariable(dto.getMontoVariable() != null ? dto.getMontoVariable() : BigDecimal.ZERO)
                 .fechaProximaRevision(dto.getFechaProximaRevision())
-                .espacioId(dto.getEspacioId())
+                .espacioId(espacio)
                 .servicio(servicio)
-                .pagadorId(dto.getPagadorId())
-                .categoriaId(dto.getCategoriaId())
+                .pagadorId(pagador)
+                .categoria(categoria)
                 .reglaDivision(dto.getReglaDivision() != null ? dto.getReglaDivision() : ReglaDivision.EQUITATIVA)
                 .build();
 
@@ -253,7 +245,7 @@ public class RecurrentesService {
             throw new ReglaInvalidaException("No hay usuarios registrados en el sistema para asociar al gasto");
         }
 
-        Long pagadorId = plantilla.getPagadorId();
+        Long pagadorId = plantilla.getPagadorId() != null ? plantilla.getPagadorId().getId() : null;
         if (pagadorId == null || !usuarioRepository.existsById(pagadorId)) {
             pagadorId = usuariosDisponibles.get(0).getId();
         }
@@ -263,18 +255,20 @@ public class RecurrentesService {
                 .toList();
 
         ReglaDivision regla = plantilla.getReglaDivision() != null ? plantilla.getReglaDivision() : ReglaDivision.EQUITATIVA;
+        Long categoriaId = plantilla.getCategoria() != null ? plantilla.getCategoria().getId() : null;
 
         CrearGastoDTO crearGastoDTO = CrearGastoDTO.builder()
                 .descripcion(plantilla.getNombre())
-                .monto(montoTotalBD.doubleValue())
+                .monto(montoTotalBD)
                 .fecha(hoy)
                 .pagadorId(pagadorId)
-                .categoriaId(plantilla.getCategoriaId())
+                .categoriaId(categoriaId)
                 .regla(regla)
                 .participantes(participantes)
                 .build();
 
-        return gastoService.registrarGasto(plantilla.getEspacioId(), crearGastoDTO);
+        Long idEspacio = plantilla.getEspacioId() != null ? plantilla.getEspacioId().getId() : null;
+        return gastoService.registrarGasto(idEspacio, crearGastoDTO);
     }
 
     /**
@@ -317,11 +311,11 @@ public class RecurrentesService {
                 .montoBase(plantilla.getMontoBase())
                 .montoVariable(plantilla.getMontoVariable())
                 .fechaProximaRevision(plantilla.getFechaProximaRevision())
-                .espacioId(plantilla.getEspacioId())
+                .espacioId(plantilla.getEspacioId() != null ? plantilla.getEspacioId().getId() : null)
                 .servicioId(plantilla.getServicio() != null ? plantilla.getServicio().getId() : null)
                 .nombreServicio(plantilla.getServicio() != null ? plantilla.getServicio().getNombre() : null)
-                .pagadorId(plantilla.getPagadorId())
-                .categoriaId(plantilla.getCategoriaId())
+                .pagadorId(plantilla.getPagadorId() != null ? plantilla.getPagadorId().getId() : null)
+                .categoriaId(plantilla.getCategoria() != null ? plantilla.getCategoria().getId() : null)
                 .reglaDivision(plantilla.getReglaDivision())
                 .vencido(vencido)
                 .build();

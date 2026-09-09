@@ -7,6 +7,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
+
 /**
  * Objeto de transferencia de datos para registrar el pago de una deuda.
  * Si no se especifica un monto, se interpreta como la cancelacion total del saldo pendiente.
@@ -19,7 +21,7 @@ import lombok.Setter;
 public class RegistrarPagoDTO {
 
     @DecimalMin(value = "0.01", message = "El monto del pago debe ser mayor a cero")
-    private Double monto;
+    private BigDecimal monto;
 
     private Long liquidacionId;
 }
