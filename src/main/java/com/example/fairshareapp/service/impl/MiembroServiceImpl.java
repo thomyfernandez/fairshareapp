@@ -18,7 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Implementacion del servicio transaccional para la administracion de miembros de un espacio compartido,
@@ -67,8 +66,14 @@ public class MiembroServiceImpl implements MiembroService {
         Usuario usuario = usuarioRepository.findById(unirseDTO.getUsuarioId())
                 .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado con id: " + unirseDTO.getUsuarioId()));
 
-        if (miembroEspacioRepository.existsByEspacioIdAndUsuarioId(espacioId, usuario.getId())) {
-            throw new ReglaInvalidaException("El usuario ya pertenece al espacio indicado");
+        java.util.Optional<MiembroEspacio> miembroExistente = miembroEspacioRepository.findByEspacioIdAndUsuarioId(espacioId, usuario.getId());
+        if (miembroExistente.isPresent()) {
+            MiembroEspacio miembro = miembroExistente.get();
+            if (unirseDTO.getSueldoDeclarado() != null) {
+                miembro.setSueldoDeclarado(unirseDTO.getSueldoDeclarado());
+                miembro = miembroEspacioRepository.save(miembro);
+            }
+            return mapToResponseDTO(miembro);
         }
 
         boolean esPrimerMiembro = miembroEspacioRepository.findByEspacioId(espacioId).isEmpty();
@@ -98,7 +103,7 @@ public class MiembroServiceImpl implements MiembroService {
         }
         return miembroEspacioRepository.findByEspacioId(espacioId).stream()
                 .map(this::mapToResponseDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**
@@ -164,17 +169,30 @@ public class MiembroServiceImpl implements MiembroService {
         String nombreCompleto = usuario != null
                 ? String.join(" ", nonNullOrEmpty(usuario.getNombre()), nonNullOrEmpty(usuario.getApellido())).trim()
                 : null;
+        String nombreVisible = null;
+        if (nombreCompleto != null && !nombreCompleto.isEmpty()) {
+            nombreVisible = nombreCompleto;
+        } else if (usuario != null) {
+            nombreVisible = usuario.getNombreUsuario();
+        }
+
         return MiembroResponseDTO.builder()
                 .id(miembro.getId())
                 .espacioId(miembro.getEspacio() != null ? miembro.getEspacio().getId() : null)
                 .usuarioId(usuario != null ? usuario.getId() : null)
-                .nombreUsuario(nombreCompleto != null && !nombreCompleto.isEmpty() ? nombreCompleto : (usuario != null ? usuario.getUsuario() : null))
+                .nombreUsuario(nombreVisible)
                 .emailUsuario(usuario != null ? usuario.getEmail() : null)
                 .rol(miembro.getRol())
                 .sueldoDeclarado(miembro.getSueldoDeclarado())
                 .build();
     }
 
+    /**
+     * Retorna el valor recibido o una cadena vacia en caso de ser nulo.
+     *
+     * @param valor Cadena original a evaluar.
+     * @return Cadena garantizada como no nula.
+     */
     private String nonNullOrEmpty(String valor) {
         return valor != null ? valor : "";
     }

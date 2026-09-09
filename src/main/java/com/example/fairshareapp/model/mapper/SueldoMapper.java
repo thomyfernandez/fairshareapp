@@ -6,7 +6,6 @@ import com.example.fairshareapp.model.response.SueldoResponse;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Componente para mapear entre la entidad Sueldo y sus correspondientes DTOs de Request y Response.
@@ -29,7 +28,10 @@ public class SueldoMapper {
         sueldoResponse.setMonto(sueldo.getMonto());
         sueldoResponse.setTipo(sueldo.getTipo());
         sueldoResponse.setFrecuencia(sueldo.getFrecuencia());
+        sueldoResponse.setMes(sueldo.getMes());
+        sueldoResponse.setAnio(sueldo.getAnio());
         if (sueldo.getUsuario() != null) {
+            sueldoResponse.setUsuarioId(sueldo.getUsuario().getId());
             sueldoResponse.setUsuarioNombre(sueldo.getUsuario().getNombre());
         }
 
@@ -47,9 +49,12 @@ public class SueldoMapper {
             return null;
         }
         SueldoResponse response = new SueldoResponse();
+        response.setUsuarioId(sueldoRequest.getUsuarioId());
         response.setMonto(sueldoRequest.getMonto());
         response.setTipo(sueldoRequest.getTipo());
         response.setFrecuencia(sueldoRequest.getFrecuencia());
+        response.setMes(sueldoRequest.getMes());
+        response.setAnio(sueldoRequest.getAnio());
         return response;
     }
 
@@ -65,7 +70,7 @@ public class SueldoMapper {
         }
         return sueldos.stream()
                 .map(this::toResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**
@@ -82,6 +87,8 @@ public class SueldoMapper {
                 .monto(sueldoRequest.getMonto())
                 .tipo(sueldoRequest.getTipo())
                 .frecuencia(sueldoRequest.getFrecuencia())
+                .mes(sueldoRequest.getMes())
+                .anio(sueldoRequest.getAnio())
                 .build();
     }
 }

@@ -4,7 +4,6 @@ import com.example.fairshareapp.model.entity.Sueldo;
 import com.example.fairshareapp.model.request.SueldoRequest;
 import com.example.fairshareapp.model.response.SueldoResponse;
 import java.util.List;
-import java.util.Optional;
 
 public interface SueldoService {
 

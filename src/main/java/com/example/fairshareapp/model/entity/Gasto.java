@@ -1,5 +1,6 @@
 package com.example.fairshareapp.model.entity;
 
+import com.example.fairshareapp.model.enums.EstadoGasto;
 import com.example.fairshareapp.model.enums.ReglaDivision;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -27,8 +28,8 @@ import java.util.List;
 
 /**
  * Entidad JPA que representa un gasto dentro de la aplicacion.
- * Modela la tabla 'gastos' en la base de datos vinculada con Espacio, Categoria, Usuario (pagador)
- * y una coleccion de participantes.
+ * Modela la tabla 'gastos' en la base de datos vinculada con Espacio, Categoria, Usuario (pagador),
+ * coleccion de participantes y liquidacion asociada.
  */
 @Entity
 @Table(name = "gastos")
@@ -67,6 +68,15 @@ public class Gasto {
     @Enumerated(EnumType.STRING)
     @Column(name = "regla_division", nullable = false)
     private ReglaDivision reglaDivision;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "estado", nullable = false)
+    @Builder.Default
+    private EstadoGasto estado = EstadoGasto.PENDIENTE;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "liquidacion_id")
+    private Liquidacion liquidacion;
 
     @OneToMany(mappedBy = "gasto", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default

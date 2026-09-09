@@ -61,7 +61,7 @@ class SueldoServiceTest {
                 .id(1L)
                 .nombre("Martin")
                 .email("martin@test.com")
-                .sueldo(0.0)
+                .sueldo(BigDecimal.ZERO)
                 .build();
 
         sueldo = Sueldo.builder()
@@ -69,6 +69,8 @@ class SueldoServiceTest {
                 .monto(BigDecimal.valueOf(800000.00))
                 .tipo(TipoSueldo.FIJO)
                 .frecuencia(FrecuenciaSueldo.MENSUAL)
+                .mes(9)
+                .anio(2026)
                 .usuario(usuario)
                 .build();
     }
@@ -84,6 +86,7 @@ class SueldoServiceTest {
         request.setFrecuencia(FrecuenciaSueldo.MENSUAL);
 
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+        when(sueldoRepository.findByUsuario_IdAndAnioAndMes(any(), any(), any())).thenReturn(Optional.empty());
         when(sueldoRepository.save(any(Sueldo.class))).thenAnswer(i -> {
             Sueldo s = i.getArgument(0);
             s.setId(11L);
@@ -94,9 +97,36 @@ class SueldoServiceTest {
 
         assertNotNull(response);
         assertEquals(BigDecimal.valueOf(850000.00), response.getMonto());
-        assertEquals(850000.00, usuario.getSueldo());
+        assertEquals(BigDecimal.valueOf(850000.00), usuario.getSueldo());
         verify(usuarioRepository).save(usuario);
         verify(sueldoRepository).save(any(Sueldo.class));
+    }
+
+    /**
+     * Valida que si ya existe un sueldo para el mismo mes y anio, se actualiza el registro existente (upsert).
+     */
+    @Test
+    void crearSueldo_MismoPeriodoExiste_ActualizaRegistroExistente() {
+        SueldoRequest request = new SueldoRequest();
+        request.setMonto(BigDecimal.valueOf(950000.00));
+        request.setTipo(TipoSueldo.VARIABLE);
+        request.setFrecuencia(FrecuenciaSueldo.MENSUAL);
+        request.setMes(9);
+        request.setAnio(2026);
+
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+        when(sueldoRepository.findByUsuario_IdAndAnioAndMes(1L, 2026, 9)).thenReturn(Optional.of(sueldo));
+        when(sueldoRepository.save(any(Sueldo.class))).thenAnswer(i -> i.getArgument(0));
+
+        SueldoResponse response = sueldoService.crearSueldo(1L, request);
+
+        assertNotNull(response);
+        assertEquals(10L, response.getId());
+        assertEquals(BigDecimal.valueOf(950000.00), response.getMonto());
+        assertEquals(TipoSueldo.VARIABLE, response.getTipo());
+        assertEquals(9, response.getMes());
+        assertEquals(2026, response.getAnio());
+        assertEquals(BigDecimal.valueOf(950000.00), usuario.getSueldo());
     }
 
     /**

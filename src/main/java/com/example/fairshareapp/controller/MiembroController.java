@@ -26,7 +26,7 @@ import java.util.List;
  * asignar roles y gestionar el sueldo mensual declarado.
  */
 @RestController
-@RequestMapping("/api/v1/espacios")
+@RequestMapping("/api/v1/espacios/{id}")
 public class MiembroController {
 
     private final MiembroService miembroService;
@@ -47,7 +47,7 @@ public class MiembroController {
      * @param unirseDTO Datos de union, incluyendo codigo, usuario y sueldo declarado opcional.
      * @return ResponseEntity con el MiembroResponseDTO creado y codigo HTTP 201 Created.
      */
-    @PostMapping("/{id}/unirse")
+    @PostMapping("/unirse")
     public ResponseEntity<MiembroResponseDTO> unirseAEspacio(@PathVariable Long id,
                                                               @Valid @RequestBody UnirseEspacioDTO unirseDTO) {
         MiembroResponseDTO response = miembroService.unirseAEspacio(id, unirseDTO);
@@ -60,7 +60,7 @@ public class MiembroController {
      * @param id Identificador unico del espacio.
      * @return ResponseEntity con la lista de MiembroResponseDTO y codigo HTTP 200 OK.
      */
-    @GetMapping("/{id}/miembros")
+    @GetMapping("/miembros")
     public ResponseEntity<List<MiembroResponseDTO>> listarMiembros(@PathVariable Long id) {
         List<MiembroResponseDTO> response = miembroService.listarMiembros(id);
         return ResponseEntity.ok(response);
@@ -74,7 +74,7 @@ public class MiembroController {
      * @param actualizarSueldoDTO Datos con el nuevo sueldo declarado.
      * @return ResponseEntity con el MiembroResponseDTO actualizado y codigo HTTP 200 OK.
      */
-    @PutMapping("/{id}/miembros/{usuarioId}/sueldo")
+    @PutMapping("/miembros/{usuarioId}/sueldo")
     public ResponseEntity<MiembroResponseDTO> actualizarSueldo(@PathVariable Long id,
                                                                 @PathVariable Long usuarioId,
                                                                 @Valid @RequestBody ActualizarSueldoDTO actualizarSueldoDTO) {
@@ -90,7 +90,7 @@ public class MiembroController {
      * @param rol Nuevo rol a asignar.
      * @return ResponseEntity con el MiembroResponseDTO con el rol actualizado.
      */
-    @PatchMapping("/{id}/miembros/{usuarioId}/rol")
+    @PatchMapping("/miembros/{usuarioId}/rol")
     public ResponseEntity<MiembroResponseDTO> asignarRol(@PathVariable Long id,
                                                           @PathVariable Long usuarioId,
                                                           @RequestParam RolMiembro rol) {

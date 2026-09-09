@@ -2,8 +2,6 @@ package com.example.fairshareapp.repository;
 
 import com.example.fairshareapp.model.entity.MiembroEspacio;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
-
 import java.util.List;
 import java.util.Optional;
 
@@ -11,7 +9,6 @@ import java.util.Optional;
  * Repositorio Spring Data JPA para la entidad MiembroEspacio.
  * Provee consultas de membresia por espacio y por usuario.
  */
-@Repository
 public interface MiembroEspacioRepository extends JpaRepository<MiembroEspacio, Long> {
 
     /**

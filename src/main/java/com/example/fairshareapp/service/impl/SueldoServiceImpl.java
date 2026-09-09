@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 
 /**
@@ -21,6 +22,8 @@ import java.util.List;
 @Service
 @Transactional
 public class SueldoServiceImpl implements SueldoService {
+
+    private static final String SUELDO_NO_ENCONTRADO = "Sueldo no encontrado con id: ";
 
     private final SueldoRepository sueldoRepository;
     private final UsuarioRepository usuarioRepository;
@@ -53,13 +56,24 @@ public class SueldoServiceImpl implements SueldoService {
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado con id: " + usuarioId));
 
-        Sueldo sueldo = Sueldo.builder()
-                .monto(sueldoRequest.getMonto())
-                .tipo(sueldoRequest.getTipo())
-                .frecuencia(sueldoRequest.getFrecuencia())
-                .usuario(usuario)
-                .fechaInicio(LocalDate.now())
-                .build();
+        LocalDate ahora = LocalDate.now(ZoneId.systemDefault());
+        int mes = sueldoRequest.getMes() != null ? sueldoRequest.getMes() : ahora.getMonthValue();
+        int anio = sueldoRequest.getAnio() != null ? sueldoRequest.getAnio() : ahora.getYear();
+
+        // Si ya existe un registro para este usuario, anio y mes, se actualiza (upsert)
+        Sueldo sueldo = sueldoRepository.findByUsuario_IdAndAnioAndMes(usuarioId, anio, mes)
+                .orElseGet(() -> Sueldo.builder()
+                        .usuario(usuario)
+                        .fechaInicio(ahora)
+                        .mes(mes)
+                        .anio(anio)
+                        .build());
+
+        sueldo.setMonto(sueldoRequest.getMonto());
+        sueldo.setTipo(sueldoRequest.getTipo());
+        sueldo.setFrecuencia(sueldoRequest.getFrecuencia());
+        sueldo.setMes(mes);
+        sueldo.setAnio(anio);
 
         // Sincroniza el sueldo en el usuario para calculos proporcionales
         if (sueldoRequest.getMonto() != null) {
@@ -93,7 +107,7 @@ public class SueldoServiceImpl implements SueldoService {
     @Transactional(readOnly = true)
     public SueldoResponse obtenerSueldo(Long id) {
         Sueldo sueldo = sueldoRepository.findById(id)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Sueldo no encontrado con id: " + id));
+                .orElseThrow(() -> new RecursoNoEncontradoException(SUELDO_NO_ENCONTRADO + id));
         return sueldoMapper.toResponse(sueldo);
     }
 
@@ -118,11 +132,17 @@ public class SueldoServiceImpl implements SueldoService {
     @Override
     public void actualizarSueldo(Long id, SueldoRequest sueldoRequest) {
         Sueldo sueldo = sueldoRepository.findById(id)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Sueldo no encontrado con id: " + id));
+                .orElseThrow(() -> new RecursoNoEncontradoException(SUELDO_NO_ENCONTRADO + id));
 
         sueldo.setMonto(sueldoRequest.getMonto());
         sueldo.setTipo(sueldoRequest.getTipo());
         sueldo.setFrecuencia(sueldoRequest.getFrecuencia());
+        if (sueldoRequest.getMes() != null) {
+            sueldo.setMes(sueldoRequest.getMes());
+        }
+        if (sueldoRequest.getAnio() != null) {
+            sueldo.setAnio(sueldoRequest.getAnio());
+        }
 
         if (sueldo.getUsuario() != null && sueldoRequest.getMonto() != null) {
             Usuario usuario = sueldo.getUsuario();
@@ -141,7 +161,7 @@ public class SueldoServiceImpl implements SueldoService {
     @Override
     public void eliminarSueldo(Long id) {
         if (!sueldoRepository.existsById(id)) {
-            throw new RecursoNoEncontradoException("Sueldo no encontrado con id: " + id);
+            throw new RecursoNoEncontradoException(SUELDO_NO_ENCONTRADO + id);
         }
         sueldoRepository.deleteById(id);
     }
@@ -177,7 +197,7 @@ public class SueldoServiceImpl implements SueldoService {
     @Override
     public Sueldo updateSueldo(Long id, SueldoResponse sueldo) {
         Sueldo sueldoFinded = sueldoRepository.findById(id)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Sueldo no encontrado con id: " + id));
+                .orElseThrow(() -> new RecursoNoEncontradoException(SUELDO_NO_ENCONTRADO + id));
 
         if (sueldo.getMonto() != null) {
             sueldoFinded.setMonto(sueldo.getMonto());
@@ -187,6 +207,12 @@ public class SueldoServiceImpl implements SueldoService {
         }
         if (sueldo.getFrecuencia() != null) {
             sueldoFinded.setFrecuencia(sueldo.getFrecuencia());
+        }
+        if (sueldo.getMes() != null) {
+            sueldoFinded.setMes(sueldo.getMes());
+        }
+        if (sueldo.getAnio() != null) {
+            sueldoFinded.setAnio(sueldo.getAnio());
         }
 
         return sueldoRepository.save(sueldoFinded);

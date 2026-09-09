@@ -28,26 +28,51 @@ public class SueldoController {
         this.sueldoMapper = sueldoMapper;
     }
 
+    /**
+     * Retorna el listado de sueldos registrados, filtrando opcionalmente por usuario.
+     *
+     * @param usuarioId Identificador opcional del usuario para filtrar sueldos.
+     * @return Lista de SueldoResponse.
+     */
     @GetMapping
-    public List<SueldoResponse> getAllSueldos() {
-
+    public List<SueldoResponse> getAllSueldos(@RequestParam(required = false) Long usuarioId) {
+        if (usuarioId != null) {
+            return sueldoService.obtenerSueldosPorUsuario(usuarioId);
+        }
         return sueldoService.getAllSueldos();
-
     }
 
+    /**
+     * Registra o actualiza el sueldo para un usuario y período mensual específico.
+     *
+     * @param request Datos del sueldo incluyendo monto, frecuencia, mes, anio y usuarioId opcional.
+     * @return ResponseEntity con el SueldoResponse creado o actualizado.
+     */
     @PostMapping
     public ResponseEntity<SueldoResponse> crearSueldo(@RequestBody SueldoRequest request) {
-        // El servicio ya devuelve el objeto mapeado correctamente
-        SueldoResponse response = sueldoService.crearSueldo(Long.valueOf(1), request); // estatico con ID = 1, a cambiar
+        Long usuarioId = request.getUsuarioId() != null ? request.getUsuarioId() : 1L;
+        SueldoResponse response = sueldoService.crearSueldo(usuarioId, request);
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * Actualiza los datos de un sueldo existente identificado por su ID.
+     *
+     * @param id Identificador unico del sueldo a modificar.
+     * @param sueldoRequest Nuevos datos del sueldo.
+     * @return SueldoResponse actualizado.
+     */
     @PutMapping("/{id}")
     public SueldoResponse updateSueldo(@PathVariable Long id, @RequestBody SueldoRequest sueldoRequest) {
         SueldoResponse sueldo = sueldoMapper.toSueldoResponse(sueldoRequest);
         return sueldoService.updateSueldo(id, sueldo).toSueldoResponse();
     }
 
+    /**
+     * Elimina un registro de sueldo segun su identificador unico.
+     *
+     * @param id Identificador unico del sueldo a borrar.
+     */
     @DeleteMapping("/{id}")
     public void deleteSueldo(@PathVariable Long id) {
         sueldoService.deleteSueldo(id);

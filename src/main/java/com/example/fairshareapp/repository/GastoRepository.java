@@ -1,13 +1,14 @@
 package com.example.fairshareapp.repository;
 
 import com.example.fairshareapp.model.entity.Gasto;
+import com.example.fairshareapp.model.enums.EstadoGasto;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.time.LocalDate;
 import java.util.List;
 
 /**
  * Repositorio Spring Data JPA para la entidad Gasto.
- * Proporciona metodos de acceso a datos, filtrado por espacio y periodos de tiempo.
+ * Proporciona metodos de acceso a datos, filtrado por espacio, estado de liquidacion y periodos de tiempo.
  */
 public interface GastoRepository extends JpaRepository<Gasto, Long> {
 
@@ -28,4 +29,22 @@ public interface GastoRepository extends JpaRepository<Gasto, Long> {
      * @return Lista de gastos que coinciden con el criterio de busqueda.
      */
     List<Gasto> findByEspacioIdAndFechaBetweenOrderByFechaDesc(Long espacioId, LocalDate fechaDesde, LocalDate fechaHasta);
+
+    /**
+     * Recupera los gastos de un espacio que se encuentran en un estado especifico (ej. PENDIENTE o LIQUIDADO).
+     *
+     * @param espacioId Identificador unico del espacio.
+     * @param estado Estado de liquidacion de los gastos.
+     * @return Lista de gastos coincidentes.
+     */
+    List<Gasto> findByEspacioIdAndEstadoOrderByFechaAsc(Long espacioId, EstadoGasto estado);
+
+    /**
+     * Recupera un conjunto de gastos por sus identificadores asegurando que pertenezcan al espacio indicado.
+     *
+     * @param ids Lista de identificadores de gastos.
+     * @param espacioId Identificador unico del espacio.
+     * @return Lista de gastos pertenecientes a dicho espacio.
+     */
+    List<Gasto> findByIdInAndEspacioId(List<Long> ids, Long espacioId);
 }

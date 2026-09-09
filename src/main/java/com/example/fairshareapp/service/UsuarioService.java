@@ -8,7 +8,7 @@ import java.util.List;
 
 public interface UsuarioService {
 
-    void RegistrarUsuario(RegistroUsuarioRequest request);
-    void LoginUsuario(LoginRequest request);
-    List<UsuarioResponse> GetAllUsuarios();
+    void registrarUsuario(RegistroUsuarioRequest request);
+    void loginUsuario(LoginRequest request);
+    List<UsuarioResponse> getAllUsuarios();
 }

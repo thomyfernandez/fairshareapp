@@ -14,6 +14,7 @@ import com.example.fairshareapp.model.entity.Usuario;
 import com.example.fairshareapp.repository.CategoriaRepository;
 import com.example.fairshareapp.repository.EspacioRepository;
 import com.example.fairshareapp.repository.GastoRepository;
+import com.example.fairshareapp.repository.SueldoRepository;
 import com.example.fairshareapp.repository.UsuarioRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,13 +22,16 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Servicio de negocio para la gestion y particion de gastos en la aplicacion.
- * Implementa la logica transaccional para registrar egresos individuales o por lote,
- * asignar participantes y calcular los importes segun la regla de division activa.
+ * Implementa la logica transaccional para registrar egresos individuales o por
+ * lote,
+ * asignar participantes y calcular los importes segun la regla de division
+ * activa.
  */
 @Service
 @Transactional
@@ -37,31 +41,36 @@ public class GastoService {
     private final EspacioRepository espacioRepository;
     private final UsuarioRepository usuarioRepository;
     private final CategoriaRepository categoriaRepository;
+    private final SueldoRepository sueldoRepository;
 
     /**
      * Constructor con inyeccion de dependencias de los repositorios requeridos.
      *
-     * @param gastoRepository Repositorio de persistencia de gastos.
-     * @param espacioRepository Repositorio de persistencia de espacios.
-     * @param usuarioRepository Repositorio de persistencia de usuarios.
+     * @param gastoRepository     Repositorio de persistencia de gastos.
+     * @param espacioRepository   Repositorio de persistencia de espacios.
+     * @param usuarioRepository   Repositorio de persistencia de usuarios.
      * @param categoriaRepository Repositorio de persistencia de categorias.
+     * @param sueldoRepository    Repositorio de persistencia de sueldos.
      */
     public GastoService(GastoRepository gastoRepository,
-                        EspacioRepository espacioRepository,
-                        UsuarioRepository usuarioRepository,
-                        CategoriaRepository categoriaRepository) {
+            EspacioRepository espacioRepository,
+            UsuarioRepository usuarioRepository,
+            CategoriaRepository categoriaRepository,
+            SueldoRepository sueldoRepository) {
         this.gastoRepository = gastoRepository;
         this.espacioRepository = espacioRepository;
         this.usuarioRepository = usuarioRepository;
         this.categoriaRepository = categoriaRepository;
+        this.sueldoRepository = sueldoRepository;
     }
 
     /**
-     * Registra un egreso en un espacio determinado calculando las cuotas de cada participante
+     * Registra un egreso en un espacio determinado calculando las cuotas de cada
+     * participante
      * segun la regla de division activa configurada.
      *
      * @param espacioId Identificador unico del espacio.
-     * @param dto Datos de creacion del gasto y sus participantes.
+     * @param dto       Datos de creacion del gasto y sus participantes.
      * @return Detalle estructurado del gasto registrado.
      */
     public GastoDetalleDTO registrarGasto(Long espacioId, CrearGastoDTO dto) {
@@ -71,15 +80,17 @@ public class GastoService {
                 .orElseThrow(() -> new RecursoNoEncontradoException("Espacio no encontrado con id: " + espacioId));
 
         Usuario pagador = usuarioRepository.findById(dto.getPagadorId())
-                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario pagador no encontrado con id: " + dto.getPagadorId()));
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Usuario pagador no encontrado con id: " + dto.getPagadorId()));
 
         Categoria categoria = null;
         if (dto.getCategoriaId() != null) {
             categoria = categoriaRepository.findById(dto.getCategoriaId())
-                    .orElseThrow(() -> new RecursoNoEncontradoException("Categoria no encontrada con id: " + dto.getCategoriaId()));
+                    .orElseThrow(() -> new RecursoNoEncontradoException(
+                            "Categoria no encontrada con id: " + dto.getCategoriaId()));
         }
 
-        LocalDate fechaGasto = dto.getFecha() != null ? dto.getFecha() : LocalDate.now();
+        LocalDate fechaGasto = dto.getFecha() != null ? dto.getFecha() : LocalDate.now(ZoneId.systemDefault());
         ReglaDivision regla = dto.getRegla() != null ? dto.getRegla() : ReglaDivision.EQUITATIVA;
 
         Gasto nuevoGasto = Gasto.builder()
@@ -90,13 +101,13 @@ public class GastoService {
                 .pagador(pagador)
                 .categoria(categoria)
                 .reglaDivision(regla)
+                .estado(com.example.fairshareapp.model.enums.EstadoGasto.PENDIENTE)
                 .participantes(new ArrayList<>())
                 .build();
 
-        List<GastoParticipante> participantesCalculados = calcularParticipaciones(nuevoGasto, dto.getMonto(), regla, dto.getParticipantes());
-        participantesCalculados.forEach(participante -> {
-            nuevoGasto.getParticipantes().add(participante);
-        });
+        List<GastoParticipante> participantesCalculados = calcularParticipaciones(nuevoGasto, dto.getMonto(), regla,
+                dto.getParticipantes());
+        participantesCalculados.forEach(participante -> nuevoGasto.getParticipantes().add(participante));
 
         Gasto gastoGuardado = gastoRepository.save(nuevoGasto);
         return mapearADetalleDTO(gastoGuardado);
@@ -106,7 +117,7 @@ public class GastoService {
      * Registra un lote de gastos para un espacio en una unica transaccion atomica.
      *
      * @param espacioId Identificador del espacio.
-     * @param dtos Lista de gastos a registrar.
+     * @param dtos      Lista de gastos a registrar.
      * @return Lista con los detalles de los gastos creados.
      */
     public List<GastoDetalleDTO> registrarLoteGastos(Long espacioId, List<CrearGastoDTO> dtos) {
@@ -122,16 +133,18 @@ public class GastoService {
     }
 
     /**
-     * Consulta los gastos asociados a un espacio, permitiendo filtrar por un rango de fechas.
+     * Consulta los gastos asociados a un espacio, permitiendo filtrar por un rango
+     * de fechas.
      * Si no se especifican fechas, recupera la totalidad de gastos del espacio.
      *
-     * @param espacioId Identificador del espacio.
+     * @param espacioId  Identificador del espacio.
      * @param fechaDesde Fecha inicial del periodo (opcional).
      * @param fechaHasta Fecha final del periodo (opcional).
      * @return Lista de gastos mapeados a su DTO de detalle.
      */
     @Transactional(readOnly = true)
-    public List<GastoDetalleDTO> obtenerGastosPorEspacioYPeriodo(Long espacioId, LocalDate fechaDesde, LocalDate fechaHasta) {
+    public List<GastoDetalleDTO> obtenerGastosPorEspacioYPeriodo(Long espacioId, LocalDate fechaDesde,
+            LocalDate fechaHasta) {
         if (!espacioRepository.existsById(espacioId)) {
             throw new RecursoNoEncontradoException("Espacio no encontrado con id: " + espacioId);
         }
@@ -175,7 +188,8 @@ public class GastoService {
     }
 
     /**
-     * Valida los campos obligatorios y coherencia general del DTO de creacion de gasto.
+     * Valida los campos obligatorios y coherencia general del DTO de creacion de
+     * gasto.
      *
      * @param dto DTO con los datos del gasto a validar.
      */
@@ -198,45 +212,52 @@ public class GastoService {
     }
 
     /**
-     * Realiza el calculo de importes y porcentajes de participacion segun la regla de division activa.
+     * Realiza el calculo de importes y porcentajes de participacion segun la regla
+     * de division activa.
      *
-     * @param gasto Instancia de gasto a asociar.
-     * @param montoTotal Monto total del egreso a dividir.
-     * @param regla Regla activa seleccionada para la particion.
+     * @param gasto            Instancia de gasto a asociar.
+     * @param montoTotal       Monto total del egreso a dividir.
+     * @param regla            Regla activa seleccionada para la particion.
      * @param participantesDTO Lista de participantes con su informacion.
-     * @return Lista de entidades GastoParticipante calculadas y preparadas para persistir.
+     * @return Lista de entidades GastoParticipante calculadas y preparadas para
+     *         persistir.
      */
     private List<GastoParticipante> calcularParticipaciones(Gasto gasto,
-                                                          BigDecimal montoTotal,
-                                                          ReglaDivision regla,
-                                                          List<GastoParticipanteDTO> participantesDTO) {
+            BigDecimal montoTotal,
+            ReglaDivision regla,
+            List<GastoParticipanteDTO> participantesDTO) {
         List<Usuario> usuarios = new ArrayList<>();
         for (GastoParticipanteDTO partDto : participantesDTO) {
             if (partDto.getUsuarioId() == null) {
                 throw new ReglaInvalidaException("Cada participante debe indicar un usuarioId valido");
             }
             Usuario usuario = usuarioRepository.findById(partDto.getUsuarioId())
-                    .orElseThrow(() -> new RecursoNoEncontradoException("Usuario participante no encontrado con id: " + partDto.getUsuarioId()));
+                    .orElseThrow(() -> new RecursoNoEncontradoException(
+                            "Usuario participante no encontrado con id: " + partDto.getUsuarioId()));
             usuarios.add(usuario);
         }
 
         return switch (regla) {
             case EQUITATIVA, PARTICIPACION_PARCIAL -> calcularDivisionEquitativa(gasto, montoTotal, usuarios);
-            case PROPORCIONAL_INGRESOS -> calcularDivisionProporcionalIngresos(gasto, montoTotal, usuarios, participantesDTO);
+            case PROPORCIONAL_INGRESOS ->
+                calcularDivisionProporcionalIngresos(gasto, montoTotal, usuarios, participantesDTO);
             case PERSONALIZADA -> calcularDivisionPersonalizada(gasto, montoTotal, usuarios, participantesDTO);
         };
     }
 
     /**
-     * Calcula la division en partes iguales para una lista de usuarios participantes,
-     * compensando cualquier discrepancia de redondeo de centavos en la primera cuota.
+     * Calcula la division en partes iguales para una lista de usuarios
+     * participantes,
+     * compensando cualquier discrepancia de redondeo de centavos en la primera
+     * cuota.
      *
-     * @param gasto Entidad Gasto asociada.
+     * @param gasto      Entidad Gasto asociada.
      * @param montoTotal Monto total a dividir.
-     * @param usuarios Lista de usuarios que participan de la division.
+     * @param usuarios   Lista de usuarios que participan de la division.
      * @return Lista de participaciones con sus cuotas equitativas asignadas.
      */
-    private List<GastoParticipante> calcularDivisionEquitativa(Gasto gasto, BigDecimal montoTotal, List<Usuario> usuarios) {
+    private List<GastoParticipante> calcularDivisionEquitativa(Gasto gasto, BigDecimal montoTotal,
+            List<Usuario> usuarios) {
         int cantidad = usuarios.size();
         BigDecimal divisor = BigDecimal.valueOf(cantidad);
 
@@ -250,7 +271,8 @@ public class GastoService {
 
         List<GastoParticipante> resultado = new ArrayList<>();
         for (int i = 0; i < cantidad; i++) {
-            // Se asigna la diferencia residual de centavos al primer participante para cuadrar el monto total
+            // Se asigna la diferencia residual de centavos al primer participante para
+            // cuadrar el monto total
             BigDecimal cuotaFinal = (i == 0) ? cuotaBase.add(restoCentavos) : cuotaBase;
 
             resultado.add(GastoParticipante.builder()
@@ -264,36 +286,31 @@ public class GastoService {
     }
 
     /**
-     * Calcula la particion proporcional a los ingresos o sueldos mensuales declarados,
-     * asegurando que a todos los miembros les quede identico porcentaje de ingreso libre.
+     * Calcula la particion proporcional a los ingresos o sueldos mensuales
+     * declarados,
+     * asegurando que a todos los miembros les quede identico porcentaje de ingreso
+     * libre.
      *
-     * @param gasto Entidad Gasto asociada.
+     * @param gasto      Entidad Gasto asociada.
      * @param montoTotal Monto total del gasto.
-     * @param usuarios Lista de usuarios participantes.
-     * @param dtos Lista de DTOs participantes para soporte de ingresos especificos.
+     * @param usuarios   Lista de usuarios participantes.
+     * @param dtos       Lista de DTOs participantes para soporte de ingresos
+     *                   especificos.
      * @return Lista de participaciones ponderadas por ingreso.
      */
     private List<GastoParticipante> calcularDivisionProporcionalIngresos(Gasto gasto,
-                                                                        BigDecimal montoTotal,
-                                                                        List<Usuario> usuarios,
-                                                                        List<GastoParticipanteDTO> dtos) {
+            BigDecimal montoTotal,
+            List<Usuario> usuarios,
+            List<GastoParticipanteDTO> dtos) {
         List<BigDecimal> sueldos = new ArrayList<>();
         BigDecimal totalSueldos = BigDecimal.ZERO;
 
+        LocalDate fechaGasto = gasto.getFecha() != null ? gasto.getFecha() : LocalDate.now(ZoneId.systemDefault());
+        int mesGasto = fechaGasto.getMonthValue();
+        int anioGasto = fechaGasto.getYear();
+
         for (int i = 0; i < usuarios.size(); i++) {
-            Usuario usuario = usuarios.get(i);
-            GastoParticipanteDTO partDto = dtos.get(i);
-
-            // Permite tomar el sueldo provisto en la solicitud o el persistido en la entidad de usuario
-            BigDecimal sueldoDeclarado = (partDto.getSueldo() != null && partDto.getSueldo().doubleValue() > 0)
-                    ? partDto.getSueldo()
-                    : usuario.getSueldo();
-
-            if (sueldoDeclarado == null || sueldoDeclarado.compareTo(BigDecimal.ZERO) <= 0) {
-                throw new ReglaInvalidaException("El usuario con id " + usuario.getId() +
-                        " no cuenta con un sueldo registrado mayor a cero para aplicar la division proporcional");
-            }
-
+            BigDecimal sueldoDeclarado = resolverSueldoParticipante(usuarios.get(i), dtos.get(i), anioGasto, mesGasto);
             sueldos.add(sueldoDeclarado);
             totalSueldos = totalSueldos.add(sueldoDeclarado);
         }
@@ -303,9 +320,11 @@ public class GastoService {
 
         for (int i = 0; i < usuarios.size(); i++) {
             BigDecimal sueldo = sueldos.get(i);
-            // Multiplica monto por sueldo antes de dividir por totalSueldos para mantener maxima precision
+            // Multiplica monto por sueldo antes de dividir por totalSueldos para mantener
+            // maxima precision
             BigDecimal importe = montoTotal.multiply(sueldo).divide(totalSueldos, 2, RoundingMode.HALF_UP);
-            BigDecimal porcentaje = sueldo.multiply(BigDecimal.valueOf(100.0)).divide(totalSueldos, 2, RoundingMode.HALF_UP);
+            BigDecimal porcentaje = sueldo.multiply(BigDecimal.valueOf(100.0)).divide(totalSueldos, 2,
+                    RoundingMode.HALF_UP);
 
             acumuladoImportes = acumuladoImportes.add(importe);
             participaciones.add(GastoParticipante.builder()
@@ -316,7 +335,8 @@ public class GastoService {
                     .build());
         }
 
-        // Ajuste de eventuales centavos de redondeo sobre el primer participante para balance exacto
+        // Ajuste de eventuales centavos de redondeo sobre el primer participante para
+        // balance exacto
         BigDecimal diferencia = montoTotal.subtract(acumuladoImportes);
         if (diferencia.compareTo(BigDecimal.ZERO) != 0 && !participaciones.isEmpty()) {
             GastoParticipante primerParticipante = participaciones.get(0);
@@ -328,97 +348,174 @@ public class GastoService {
     }
 
     /**
+     * Resuelve el sueldo aplicable a un participante evaluando el DTO, el periodo del gasto,
+     * el ultimo registro historico o el sueldo base del usuario.
+     *
+     * @param usuario   Entidad Usuario participante.
+     * @param partDto   DTO de participacion en el gasto.
+     * @param anioGasto Anio del gasto.
+     * @param mesGasto  Mes del gasto.
+     * @return Sueldo declarado mayor a cero.
+     */
+    private BigDecimal resolverSueldoParticipante(Usuario usuario, GastoParticipanteDTO partDto, int anioGasto, int mesGasto) {
+        if (partDto.getSueldo() != null && partDto.getSueldo().doubleValue() > 0) {
+            return partDto.getSueldo();
+        }
+
+        Long usuarioId = usuario.getId();
+        if (usuarioId != null) {
+            var sueldoPeriodo = sueldoRepository.findByUsuario_IdAndAnioAndMes(usuarioId, anioGasto, mesGasto);
+            if (sueldoPeriodo.isPresent()) {
+                return sueldoPeriodo.get().getMonto();
+            }
+
+            var ultimoSueldo = sueldoRepository.findFirstByUsuario_IdOrderByAnioDescMesDesc(usuarioId);
+            if (ultimoSueldo.isPresent()) {
+                return ultimoSueldo.get().getMonto();
+            }
+        }
+
+        BigDecimal sueldoBase = usuario.getSueldo();
+        if (sueldoBase != null && sueldoBase.compareTo(BigDecimal.ZERO) > 0) {
+            return sueldoBase;
+        }
+
+        throw new ReglaInvalidaException("El usuario con id " + usuario.getId() +
+                " no cuenta con un sueldo registrado mayor a cero para aplicar la division proporcional");
+    }
+
+    /**
      * Calcula o valida particiones personalizadas basadas en porcentajes manuales
      * o montos fijos asignados a cada participante.
      *
-     * @param gasto Entidad Gasto asociada.
+     * @param gasto      Entidad Gasto asociada.
      * @param montoTotal Monto total del gasto.
-     * @param usuarios Lista de usuarios participantes.
-     * @param dtos Lista de DTOs con los porcentajes o montos definidos manualmente.
+     * @param usuarios   Lista de usuarios participantes.
+     * @param dtos       Lista de DTOs con los porcentajes o montos definidos
+     *                   manualmente.
      * @return Lista de participaciones personalizadas validadas.
      */
     private List<GastoParticipante> calcularDivisionPersonalizada(Gasto gasto,
-                                                                 BigDecimal montoTotal,
-                                                                 List<Usuario> usuarios,
-                                                                 List<GastoParticipanteDTO> dtos) {
+            BigDecimal montoTotal,
+            List<Usuario> usuarios,
+            List<GastoParticipanteDTO> dtos) {
         boolean usaPorcentajes = dtos.stream().anyMatch(d -> d.getPorcentaje() != null);
         boolean usaImportes = dtos.stream().anyMatch(d -> d.getImporte() != null);
 
         if (!usaPorcentajes && !usaImportes) {
-            throw new ReglaInvalidaException("Para la regla personalizada se requiere indicar porcentajes o montos por participante");
+            throw new ReglaInvalidaException(
+                    "Para la regla personalizada se requiere indicar porcentajes o montos por participante");
+        }
+
+        if (usaPorcentajes) {
+            return calcularDivisionPorPorcentajes(gasto, montoTotal, usuarios, dtos);
+        }
+
+        return calcularDivisionPorImportes(gasto, montoTotal, usuarios, dtos);
+    }
+
+    /**
+     * Calcula las participaciones personalizadas cuando la regla se define mediante
+     * porcentajes.
+     *
+     * @param gasto        Entidad Gasto asociada.
+     * @param montoTotal   Monto total del gasto como BigDecimal.
+     * @param usuarios     Lista de usuarios participantes.
+     * @param dtos         Lista de DTOs con los porcentajes definidos.
+     * @return Lista de participaciones calculadas y ajustadas.
+     */
+    private List<GastoParticipante> calcularDivisionPorPorcentajes(Gasto gasto,
+            BigDecimal montoTotal,
+            List<Usuario> usuarios,
+            List<GastoParticipanteDTO> dtos) {
+        BigDecimal sumaPorcentajes = BigDecimal.ZERO;
+        for (GastoParticipanteDTO dto : dtos) {
+            if (dto.getPorcentaje() == null || dto.getPorcentaje().compareTo(BigDecimal.ZERO) < 0) {
+                throw new ReglaInvalidaException("Cada participante debe contar con un porcentaje valido no negativo");
+            }
+            sumaPorcentajes = sumaPorcentajes.add(dto.getPorcentaje());
+        }
+
+        // Validar que la suma de porcentajes coincida con el 100% con tolerancia minima
+        if (sumaPorcentajes.subtract(BigDecimal.valueOf(100.0)).abs().compareTo(BigDecimal.valueOf(0.01)) > 0) {
+            throw new ReglaInvalidaException(
+                    "La suma de porcentajes debe ser exactamente 100%. Suma actual: " + sumaPorcentajes);
         }
 
         List<GastoParticipante> resultado = new ArrayList<>();
+        BigDecimal sumaImportes = BigDecimal.ZERO;
+        for (int i = 0; i < usuarios.size(); i++) {
+            BigDecimal porcentaje = dtos.get(i).getPorcentaje();
+            BigDecimal importe = montoTotal.multiply(porcentaje)
+                    .divide(BigDecimal.valueOf(100.0), 2, RoundingMode.HALF_UP);
 
-        if (usaPorcentajes) {
-            BigDecimal sumaPorcentajes = BigDecimal.ZERO;
-            for (GastoParticipanteDTO dto : dtos) {
-                if (dto.getPorcentaje() == null || dto.getPorcentaje().compareTo(BigDecimal.ZERO) < 0) {
-                    throw new ReglaInvalidaException("Cada participante debe contar con un porcentaje valido no negativo");
-                }
-                sumaPorcentajes = sumaPorcentajes.add(dto.getPorcentaje());
-            }
+            sumaImportes = sumaImportes.add(importe);
+            resultado.add(GastoParticipante.builder()
+                    .gasto(gasto)
+                    .usuario(usuarios.get(i))
+                    .importe(importe)
+                    .porcentaje(porcentaje)
+                    .build());
+        }
 
-            // Validar que la suma de porcentajes coincida con el 100% con tolerancia minima
-            if (sumaPorcentajes.subtract(BigDecimal.valueOf(100.0)).abs().compareTo(BigDecimal.valueOf(0.01)) > 0) {
-                throw new ReglaInvalidaException("La suma de porcentajes debe ser exactamente 100%. Suma actual: " + sumaPorcentajes);
-            }
-
-            BigDecimal sumaImportes = BigDecimal.ZERO;
-            for (int i = 0; i < usuarios.size(); i++) {
-                BigDecimal porcentaje = dtos.get(i).getPorcentaje();
-                BigDecimal importe = montoTotal.multiply(porcentaje)
-                        .divide(BigDecimal.valueOf(100.0), 2, RoundingMode.HALF_UP);
-
-                sumaImportes = sumaImportes.add(importe);
-                resultado.add(GastoParticipante.builder()
-                        .gasto(gasto)
-                        .usuario(usuarios.get(i))
-                        .importe(importe)
-                        .porcentaje(porcentaje)
-                        .build());
-            }
-
-            BigDecimal diferencia = montoTotal.subtract(sumaImportes);
-            if (diferencia.compareTo(BigDecimal.ZERO) != 0 && !resultado.isEmpty()) {
-                GastoParticipante primerParticipante = resultado.get(0);
-                primerParticipante.setImporte(primerParticipante.getImporte().add(diferencia));
-            }
-
-        } else {
-            BigDecimal sumaImportes = BigDecimal.ZERO;
-            for (GastoParticipanteDTO dto : dtos) {
-                if (dto.getImporte() == null || dto.getImporte().compareTo(BigDecimal.ZERO) < 0) {
-                    throw new ReglaInvalidaException("Cada participante debe contar con un importe fijo valido no negativo");
-                }
-                sumaImportes = sumaImportes.add(dto.getImporte());
-            }
-
-            // Validar que la suma de importes equivalga exactamente al total
-            if (sumaImportes.subtract(montoTotal).abs().compareTo(BigDecimal.valueOf(0.01)) > 0) {
-                throw new ReglaInvalidaException("La suma de importes fijados (" + sumaImportes +
-                        ") no coincide con el monto total (" + montoTotal + ")");
-            }
-
-            for (int i = 0; i < usuarios.size(); i++) {
-                BigDecimal importe = dtos.get(i).getImporte();
-                BigDecimal porcentaje = importe.multiply(BigDecimal.valueOf(100.0))
-                        .divide(montoTotal, 2, RoundingMode.HALF_UP);
-
-                resultado.add(GastoParticipante.builder()
-                        .gasto(gasto)
-                        .usuario(usuarios.get(i))
-                        .importe(importe)
-                        .porcentaje(porcentaje)
-                        .build());
-            }
+        BigDecimal diferencia = montoTotal.subtract(sumaImportes);
+        if (diferencia.compareTo(BigDecimal.ZERO) != 0 && !resultado.isEmpty()) {
+            GastoParticipante primerParticipante = resultado.get(0);
+            primerParticipante.setImporte(primerParticipante.getImporte().add(diferencia));
         }
 
         return resultado;
     }
 
     /**
-     * Mapea una entidad Gasto a su correspondiente representacion DTO GastoDetalleDTO.
+     * Calcula las participaciones personalizadas cuando la regla se define mediante
+     * importes fijos.
+     *
+     * @param gasto        Entidad Gasto asociada.
+     * @param montoTotal   Monto total del gasto como BigDecimal.
+     * @param usuarios     Lista de usuarios participantes.
+     * @param dtos         Lista de DTOs con los importes definidos.
+     * @return Lista de participaciones calculadas.
+     */
+    private List<GastoParticipante> calcularDivisionPorImportes(Gasto gasto,
+            BigDecimal montoTotal,
+            List<Usuario> usuarios,
+            List<GastoParticipanteDTO> dtos) {
+        BigDecimal sumaImportes = BigDecimal.ZERO;
+        for (GastoParticipanteDTO dto : dtos) {
+            if (dto.getImporte() == null || dto.getImporte().compareTo(BigDecimal.ZERO) < 0) {
+                throw new ReglaInvalidaException(
+                        "Cada participante debe contar con un importe fijo valido no negativo");
+            }
+            sumaImportes = sumaImportes.add(dto.getImporte());
+        }
+
+        // Validar que la suma de importes equivalga exactamente al total
+        if (sumaImportes.subtract(montoTotal).abs().compareTo(BigDecimal.valueOf(0.01)) > 0) {
+            throw new ReglaInvalidaException("La suma de importes fijados (" + sumaImportes +
+                    ") no coincide con el monto total (" + montoTotal + ")");
+        }
+
+        List<GastoParticipante> resultado = new ArrayList<>();
+        for (int i = 0; i < usuarios.size(); i++) {
+            BigDecimal importe = dtos.get(i).getImporte();
+            BigDecimal porcentaje = importe.multiply(BigDecimal.valueOf(100.0))
+                    .divide(montoTotal, 2, RoundingMode.HALF_UP);
+
+            resultado.add(GastoParticipante.builder()
+                    .gasto(gasto)
+                    .usuario(usuarios.get(i))
+                    .importe(importe)
+                    .porcentaje(porcentaje)
+                    .build());
+        }
+
+        return resultado;
+    }
+
+    /**
+     * Mapea una entidad Gasto a su correspondiente representacion DTO
+     * GastoDetalleDTO.
      *
      * @param gasto Entidad de gasto a transformar.
      * @return DTO con todos los datos y participantes del gasto.

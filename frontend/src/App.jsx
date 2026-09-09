@@ -9,7 +9,7 @@ function App() {
       const res = await fetch(url)
       const data = await res.json()
       setResponse(data)
-    } catch (error) {
+    } catch {
       setResponse({ error: 'Error al conectar con la API' })
     }
   }

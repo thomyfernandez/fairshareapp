@@ -14,7 +14,6 @@ import com.example.fairshareapp.model.entity.Usuario;
 import com.example.fairshareapp.repository.EspacioRepository;
 import com.example.fairshareapp.repository.GastoRepository;
 import com.example.fairshareapp.repository.SaldoDeudaRepository;
-import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -103,7 +102,7 @@ public class BalanceService {
 
         BigDecimal montoPendiente = deuda.getMonto();
         BigDecimal montoPagado = (dto != null && dto.getMonto() != null)
-                ? deuda.getMonto()
+                ? dto.getMonto()
                 : montoPendiente;
 
         if (montoPagado.compareTo(BigDecimal.ZERO) <= 0) {
@@ -139,6 +138,7 @@ public class BalanceService {
      * @param usuariosPorId Mapa de salida que se completa con los usuarios involucrados, para evitar consultas adicionales.
      * @return Mapa de identificador de usuario a su saldo neto.
      */
+    @SuppressWarnings("null")
     private Map<Long, BigDecimal> calcularSaldosNetos(List<Gasto> gastos, Map<Long, Usuario> usuariosPorId) {
         Map<Long, BigDecimal> saldosNetos = new HashMap<>();
 

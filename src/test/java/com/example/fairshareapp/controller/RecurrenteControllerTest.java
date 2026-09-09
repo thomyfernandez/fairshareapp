@@ -1,7 +1,6 @@
 package com.example.fairshareapp.controller;
 
 import com.example.fairshareapp.exception.GlobalExceptionHandler;
-import com.example.fairshareapp.exception.RecursoNoEncontradoException;
 import com.example.fairshareapp.exception.ReglaInvalidaException;
 import com.example.fairshareapp.model.dto.ActualizarPrecioCicloDTO;
 import com.example.fairshareapp.model.dto.GastoDetalleDTO;
@@ -165,7 +164,7 @@ class RecurrenteControllerTest {
         GastoDetalleDTO detalle = GastoDetalleDTO.builder()
                 .id(50L)
                 .descripcion("Alquiler")
-                .monto(250000.0)
+                .monto(BigDecimal.valueOf(250000.0))
                 .build();
 
         when(recurrentesService.ejecutarGastoDesdePlantilla(1L)).thenReturn(detalle);
