@@ -165,7 +165,7 @@ class RecurrenteControllerTest {
         GastoDetalleDTO detalle = GastoDetalleDTO.builder()
                 .id(50L)
                 .descripcion("Alquiler")
-                .monto(250000.0)
+                .monto(BigDecimal.valueOf(250000.0))
                 .build();
 
         when(recurrentesService.ejecutarGastoDesdePlantilla(1L)).thenReturn(detalle);

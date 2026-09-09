@@ -7,6 +7,7 @@ import com.example.fairshareapp.model.dto.CrearGastoDTO;
 import com.example.fairshareapp.model.dto.GastoDetalleDTO;
 import com.example.fairshareapp.model.dto.PlantillaGastoDTO;
 import com.example.fairshareapp.model.dto.ServicioVencimientoDTO;
+import com.example.fairshareapp.model.entity.Espacio;
 import com.example.fairshareapp.model.entity.PlantillaGastoRecurrente;
 import com.example.fairshareapp.model.enums.ReglaDivision;
 import com.example.fairshareapp.model.entity.Usuario;
@@ -63,6 +64,7 @@ class RecurrentesServiceTest {
 
     private PlantillaGastoRecurrente plantilla;
     private Usuario usuario;
+    private Espacio espacio;
 
     /**
      * Configuracion inicial previa a cada caso de prueba.
@@ -76,6 +78,8 @@ class RecurrentesServiceTest {
                 .email("thomas@example.com")
                 .build();
 
+        espacio = Espacio.builder().id(1L).build();
+
         plantilla = PlantillaGastoRecurrente.builder()
                 .id(10L)
                 .nombre("Alquiler Departamento")
@@ -83,8 +87,8 @@ class RecurrentesServiceTest {
                 .montoBase(BigDecimal.valueOf(300000.00))
                 .montoVariable(BigDecimal.valueOf(25000.00))
                 .fechaProximaRevision(LocalDate.now().plusMonths(3))
-                .espacioId(1L)
-                .pagadorId(1L)
+                .espacioId(espacio)
+                .pagadorId(usuario)
                 .reglaDivision(ReglaDivision.EQUITATIVA)
                 .build();
     }
@@ -242,7 +246,7 @@ class RecurrentesServiceTest {
         GastoDetalleDTO detalleMock = GastoDetalleDTO.builder()
                 .id(100L)
                 .descripcion("Alquiler Departamento")
-                .monto(325000.0)
+                .monto(BigDecimal.valueOf(325000.0))
                 .build();
 
         when(gastoService.registrarGasto(eq(1L), any(CrearGastoDTO.class))).thenReturn(detalleMock);

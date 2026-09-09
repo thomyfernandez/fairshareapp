@@ -61,7 +61,7 @@ class SueldoServiceTest {
                 .id(1L)
                 .nombre("Martin")
                 .email("martin@test.com")
-                .sueldo(0.0)
+                .sueldo(BigDecimal.ZERO)
                 .build();
 
         sueldo = Sueldo.builder()

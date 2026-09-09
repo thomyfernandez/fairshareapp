@@ -1,5 +1,7 @@
 package com.example.fairshareapp.controller;
 
+import java.math.BigDecimal;
+
 import com.example.fairshareapp.exception.GlobalExceptionHandler;
 import com.example.fairshareapp.exception.RecursoNoEncontradoException;
 import com.example.fairshareapp.model.dto.CrearGastoDTO;
@@ -64,7 +66,7 @@ class GastoControllerTest {
         GastoDetalleDTO detalle = GastoDetalleDTO.builder()
                 .id(1L)
                 .descripcion("Cena")
-                .monto(100.0)
+                .monto(BigDecimal.valueOf(100.0))
                 .espacioId(10L)
                 .regla(ReglaDivision.EQUITATIVA)
                 .participantes(Collections.emptyList())
@@ -99,7 +101,7 @@ class GastoControllerTest {
         GastoDetalleDTO detalle = GastoDetalleDTO.builder()
                 .id(1L)
                 .descripcion("Lote 1")
-                .monto(250.0)
+                .monto(BigDecimal.valueOf(250.0))
                 .build();
 
         when(gastoService.registrarLoteGastos(eq(10L), any())).thenReturn(List.of(detalle));
@@ -131,7 +133,7 @@ class GastoControllerTest {
         GastoDetalleDTO detalle = GastoDetalleDTO.builder()
                 .id(5L)
                 .descripcion("Gasto recuperado")
-                .monto(300.0)
+                .monto(BigDecimal.valueOf(300.0))
                 .fecha(LocalDate.of(2026, 9, 7))
                 .build();
 
