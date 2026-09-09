@@ -2,6 +2,8 @@ package com.example.fairshareapp.repository;
 
 import com.example.fairshareapp.model.entity.PlantillaGastoRecurrente;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import java.util.List;
 
 /**
@@ -15,5 +17,6 @@ public interface PlantillaGastoRepository extends JpaRepository<PlantillaGastoRe
      * @param espacioId Identificador unico del espacio.
      * @return Lista de plantillas registradas en el espacio.
      */
-    List<PlantillaGastoRecurrente> findByEspacioId(Long espacioId);
+    @Query("SELECT p FROM PlantillaGastoRecurrente p WHERE p.espacioId.id = :espacioId")
+    List<PlantillaGastoRecurrente> findByEspacioId(@Param("espacioId") Long espacioId);
 }

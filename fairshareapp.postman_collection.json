@@ -40,6 +40,26 @@
 			"key": "favoritoId",
 			"value": "1",
 			"type": "string"
+		},
+		{
+			"key": "userEmail",
+			"value": "juan.perez@example.com",
+			"type": "string"
+		},
+		{
+			"key": "userUsername",
+			"value": "juanperez",
+			"type": "string"
+		},
+		{
+			"key": "nuevoEspacioNombre",
+			"value": "Departamento Palermo",
+			"type": "string"
+		},
+		{
+			"key": "nuevoEspacioCodigo",
+			"value": "PALERMO-2026",
+			"type": "string"
 		}
 	],
 	"item": [
@@ -91,6 +111,19 @@
 			"item": [
 				{
 					"name": "Registrar Usuario",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"var ts = Date.now().toString().slice(-6);",
+									"pm.collectionVariables.set(\"userEmail\", \"juan.\" + ts + \"@example.com\");",
+									"pm.collectionVariables.set(\"userUsername\", \"juan\" + ts);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "POST",
 						"header": [
@@ -101,7 +134,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"nombre\": \"Juan\",\n  \"apellido\": \"Perez\",\n  \"email\": \"juan.perez@example.com\",\n  \"contra\": \"password123\",\n  \"usuario\": \"juanperez\"\n}"
+							"raw": "{\n  \"nombre\": \"Juan\",\n  \"apellido\": \"Perez\",\n  \"email\": \"{{userEmail}}\",\n  \"contra\": \"password123\",\n  \"usuario\": \"{{userUsername}}\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/api/v1/usuarios/registro",
@@ -131,7 +164,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"email\": \"juan.perez@example.com\",\n  \"contra\": \"password123\"\n}"
+							"raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"contra\": \"password123\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/api/v1/usuarios/login",
@@ -176,6 +209,19 @@
 			"item": [
 				{
 					"name": "Crear Espacio Compartido",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"var ts = Date.now().toString().slice(-6);",
+									"pm.collectionVariables.set(\"nuevoEspacioNombre\", \"Palermo \" + ts);",
+									"pm.collectionVariables.set(\"nuevoEspacioCodigo\", \"PAL-\" + ts);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "POST",
 						"header": [
@@ -186,7 +232,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"nombre\": \"Departamento Palermo\",\n  \"descripcion\": \"Gastos mensuales de convivencia y servicios\",\n  \"codigo\": \"PALERMO-2026\",\n  \"tipo\": \"HOGAR\",\n  \"reglaReparto\": \"PROPORCIONAL\",\n  \"presupuestoBase\": 350000.00\n}"
+							"raw": "{\n  \"nombre\": \"{{nuevoEspacioNombre}}\",\n  \"descripcion\": \"Gastos mensuales de convivencia y servicios\",\n  \"codigo\": \"{{nuevoEspacioCodigo}}\",\n  \"tipo\": \"HOGAR\",\n  \"reglaReparto\": \"PROPORCIONAL\",\n  \"presupuestoBase\": 350000.00\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/api/v1/espacios",
@@ -236,7 +282,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"nombre\": \"Departamento Palermo Actualizado\",\n  \"descripcion\": \"Gastos comunes y extraordinarios\",\n  \"codigo\": \"PALERMO-2026-REV\",\n  \"tipo\": \"HOGAR\",\n  \"reglaReparto\": \"CINCUENTA_CINCUENTA\",\n  \"presupuestoBase\": 400000.00\n}"
+							"raw": "{\n  \"nombre\": \"Departamento Palermo Actualizado\",\n  \"descripcion\": \"Gastos comunes y extraordinarios\",\n  \"codigo\": \"PALERMO-2026\",\n  \"tipo\": \"HOGAR\",\n  \"reglaReparto\": \"CINCUENTA_CINCUENTA\",\n  \"presupuestoBase\": 400000.00\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/api/v1/espacios/{{espacioId}}",
@@ -309,7 +355,7 @@
 						"method": "PATCH",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/api/v1/espacios/{{espacioId}}/presupuesto-base?presupuestoBase=450000.00",
+							"raw": "{{baseUrl}}/api/v1/espacios/{{espacioId}}/presupuesto-base?presupuestoBase=2000000.00",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -323,7 +369,7 @@
 							"query": [
 								{
 									"key": "presupuestoBase",
-									"value": "450000.00",
+									"value": "2000000.00",
 									"description": "Nuevo importe monetario del presupuesto base"
 								}
 							]
@@ -461,6 +507,22 @@
 			"item": [
 				{
 					"name": "Crear Sueldo",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200 || pm.response.code === 201) {",
+									"    var data = pm.response.json();",
+									"    if (data && data.id) {",
+									"        pm.collectionVariables.set(\"sueldoId\", String(data.id));",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "POST",
 						"header": [
@@ -471,7 +533,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"monto\": 1200000.00,\n  \"tipo\": \"FIJO\",\n  \"frecuencia\": \"MENSUAL\"\n}"
+							"raw": "{\n  \"usuarioId\": 1,\n  \"monto\": 1200000.00,\n  \"tipo\": \"FIJO\",\n  \"frecuencia\": \"MENSUAL\",\n  \"mes\": 9,\n  \"anio\": 2026\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/api/sueldos",
@@ -483,7 +545,7 @@
 								"sueldos"
 							]
 						},
-						"description": "Registra el sueldo para calcular las tasas proporcionales en los repartos de gastos."
+						"description": "Registra o actualiza el sueldo para un usuario y período mensual (mes y anio) para repartos proporcionales de gastos."
 					},
 					"response": []
 				},
@@ -502,7 +564,7 @@
 								"sueldos"
 							]
 						},
-						"description": "Obtiene la lista de todos los sueldos registrados."
+						"description": "Obtiene la lista de todos los sueldos registrados, con filtro opcional por usuarioId."
 					},
 					"response": []
 				},
@@ -518,7 +580,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"monto\": 1350000.00,\n  \"tipo\": \"FIJO\",\n  \"frecuencia\": \"MENSUAL\"\n}"
+							"raw": "{\n  \"monto\": 1350000.00,\n  \"tipo\": \"FIJO\",\n  \"frecuencia\": \"MENSUAL\",\n  \"mes\": 9,\n  \"anio\": 2026\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/api/sueldos/{{sueldoId}}",
@@ -531,7 +593,7 @@
 								"{{sueldoId}}"
 							]
 						},
-						"description": "Actualiza el monto, tipo o frecuencia de un registro de sueldo."
+						"description": "Actualiza el monto, tipo, frecuencia, mes o anio de un registro de sueldo."
 					},
 					"response": []
 				},
@@ -562,6 +624,22 @@
 			"item": [
 				{
 					"name": "Registrar Gasto en Espacio",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var data = pm.response.json();",
+									"    if (data && data.id) {",
+									"        pm.collectionVariables.set(\"gastoId\", String(data.id));",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "POST",
 						"header": [
@@ -706,6 +784,22 @@
 			"item": [
 				{
 					"name": "Obtener Balance Simplificado del Espacio",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var data = pm.response.json();",
+									"    if (data && data.deudas && data.deudas.length > 0) {",
+									"        pm.collectionVariables.set(\"deudaId\", String(data.deudas[0].id));",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "GET",
 						"header": [],
@@ -760,10 +854,26 @@
 			]
 		},
 		{
-			"name": "7. Gastos Recurrentes y Favoritos",
+			"name": "8. Gastos Recurrentes y Favoritos",
 			"item": [
 				{
 					"name": "Crear Plantilla Favorita en Espacio",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var data = pm.response.json();",
+									"    if (data && data.id) {",
+									"        pm.collectionVariables.set(\"favoritoId\", String(data.id));",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "POST",
 						"header": [
@@ -774,7 +884,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"nombre\": \"Alquiler Departamento\",\n  \"frecuenciaAjusteMeses\": 3,\n  \"montoBase\": 350000.00,\n  \"montoVariable\": 25000.00,\n  \"fechaProximaRevision\": \"2026-11-01\",\n  \"reglaDivision\": \"EQUITATIVA\"\n}"
+							"raw": "{\n  \"nombre\": \"Alquiler Departamento\",\n  \"frecuenciaAjusteMeses\": 3,\n  \"montoBase\": 350000.00,\n  \"montoVariable\": 25000.00,\n  \"fechaProximaRevision\": \"2026-11-01\",\n  \"pagadorId\": 1,\n  \"reglaDivision\": \"EQUITATIVA\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/api/v1/espacios/{{espacioId}}/favoritos",
@@ -930,6 +1040,88 @@
 							]
 						},
 						"description": "Elimina la plantilla de gasto favorita del espacio."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "9. Liquidaciones",
+			"item": [
+				{
+					"name": "Cierre de Liquidacion",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"gastoIds\": [],\n  \"mes\": 9,\n  \"anio\": 2026,\n  \"descripcion\": \"Cierre mensual y debito de presupuesto disponible\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/espacios/{{espacioId}}/liquidaciones/cierre",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"espacios",
+								"{{espacioId}}",
+								"liquidaciones",
+								"cierre"
+							]
+						},
+						"description": "Procesa el checkout y cierre de gastos pendientes, valida y descuenta el presupuesto base del espacio, y transiciona los gastos a estado LIQUIDADO."
+					},
+					"response": []
+				},
+				{
+					"name": "Historial de Liquidaciones",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/espacios/{{espacioId}}/liquidaciones/historial?anio=2026&mes=9",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"espacios",
+								"{{espacioId}}",
+								"liquidaciones",
+								"historial"
+							],
+							"query": [
+								{
+									"key": "anio",
+									"value": "2026",
+									"disabled": true
+								},
+								{
+									"key": "mes",
+									"value": "9",
+									"disabled": true
+								},
+								{
+									"key": "desde",
+									"value": "2026-09-01",
+									"disabled": true
+								},
+								{
+									"key": "hasta",
+									"value": "2026-09-30",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Obtiene la lista historica de liquidaciones cerradas para un espacio, con opciones de filtrado por rango de fechas o anio y mes."
 					},
 					"response": []
 				}

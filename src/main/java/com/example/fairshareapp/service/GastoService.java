@@ -14,6 +14,7 @@ import com.example.fairshareapp.model.entity.Usuario;
 import com.example.fairshareapp.repository.CategoriaRepository;
 import com.example.fairshareapp.repository.EspacioRepository;
 import com.example.fairshareapp.repository.GastoRepository;
+import com.example.fairshareapp.repository.SueldoRepository;
 import com.example.fairshareapp.repository.UsuarioRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,6 +41,7 @@ public class GastoService {
     private final EspacioRepository espacioRepository;
     private final UsuarioRepository usuarioRepository;
     private final CategoriaRepository categoriaRepository;
+    private final SueldoRepository sueldoRepository;
 
     /**
      * Constructor con inyeccion de dependencias de los repositorios requeridos.
@@ -48,15 +50,18 @@ public class GastoService {
      * @param espacioRepository   Repositorio de persistencia de espacios.
      * @param usuarioRepository   Repositorio de persistencia de usuarios.
      * @param categoriaRepository Repositorio de persistencia de categorias.
+     * @param sueldoRepository    Repositorio de persistencia de sueldos.
      */
     public GastoService(GastoRepository gastoRepository,
             EspacioRepository espacioRepository,
             UsuarioRepository usuarioRepository,
-            CategoriaRepository categoriaRepository) {
+            CategoriaRepository categoriaRepository,
+            SueldoRepository sueldoRepository) {
         this.gastoRepository = gastoRepository;
         this.espacioRepository = espacioRepository;
         this.usuarioRepository = usuarioRepository;
         this.categoriaRepository = categoriaRepository;
+        this.sueldoRepository = sueldoRepository;
     }
 
     /**
@@ -96,6 +101,7 @@ public class GastoService {
                 .pagador(pagador)
                 .categoria(categoria)
                 .reglaDivision(regla)
+                .estado(com.example.fairshareapp.model.enums.EstadoGasto.PENDIENTE)
                 .participantes(new ArrayList<>())
                 .build();
 
@@ -299,21 +305,12 @@ public class GastoService {
         List<BigDecimal> sueldos = new ArrayList<>();
         BigDecimal totalSueldos = BigDecimal.ZERO;
 
+        LocalDate fechaGasto = gasto.getFecha() != null ? gasto.getFecha() : LocalDate.now(ZoneId.systemDefault());
+        int mesGasto = fechaGasto.getMonthValue();
+        int anioGasto = fechaGasto.getYear();
+
         for (int i = 0; i < usuarios.size(); i++) {
-            Usuario usuario = usuarios.get(i);
-            GastoParticipanteDTO partDto = dtos.get(i);
-
-            // Permite tomar el sueldo provisto en la solicitud o el persistido en la
-            // entidad de usuario
-            BigDecimal sueldoDeclarado = (partDto.getSueldo() != null && partDto.getSueldo().doubleValue() > 0)
-                    ? partDto.getSueldo()
-                    : usuario.getSueldo();
-
-            if (sueldoDeclarado == null || sueldoDeclarado.compareTo(BigDecimal.ZERO) <= 0) {
-                throw new ReglaInvalidaException("El usuario con id " + usuario.getId() +
-                        " no cuenta con un sueldo registrado mayor a cero para aplicar la division proporcional");
-            }
-
+            BigDecimal sueldoDeclarado = resolverSueldoParticipante(usuarios.get(i), dtos.get(i), anioGasto, mesGasto);
             sueldos.add(sueldoDeclarado);
             totalSueldos = totalSueldos.add(sueldoDeclarado);
         }
@@ -348,6 +345,43 @@ public class GastoService {
         }
 
         return participaciones;
+    }
+
+    /**
+     * Resuelve el sueldo aplicable a un participante evaluando el DTO, el periodo del gasto,
+     * el ultimo registro historico o el sueldo base del usuario.
+     *
+     * @param usuario   Entidad Usuario participante.
+     * @param partDto   DTO de participacion en el gasto.
+     * @param anioGasto Anio del gasto.
+     * @param mesGasto  Mes del gasto.
+     * @return Sueldo declarado mayor a cero.
+     */
+    private BigDecimal resolverSueldoParticipante(Usuario usuario, GastoParticipanteDTO partDto, int anioGasto, int mesGasto) {
+        if (partDto.getSueldo() != null && partDto.getSueldo().doubleValue() > 0) {
+            return partDto.getSueldo();
+        }
+
+        Long usuarioId = usuario.getId();
+        if (usuarioId != null) {
+            var sueldoPeriodo = sueldoRepository.findByUsuario_IdAndAnioAndMes(usuarioId, anioGasto, mesGasto);
+            if (sueldoPeriodo.isPresent()) {
+                return sueldoPeriodo.get().getMonto();
+            }
+
+            var ultimoSueldo = sueldoRepository.findFirstByUsuario_IdOrderByAnioDescMesDesc(usuarioId);
+            if (ultimoSueldo.isPresent()) {
+                return ultimoSueldo.get().getMonto();
+            }
+        }
+
+        BigDecimal sueldoBase = usuario.getSueldo();
+        if (sueldoBase != null && sueldoBase.compareTo(BigDecimal.ZERO) > 0) {
+            return sueldoBase;
+        }
+
+        throw new ReglaInvalidaException("El usuario con id " + usuario.getId() +
+                " no cuenta con un sueldo registrado mayor a cero para aplicar la division proporcional");
     }
 
     /**

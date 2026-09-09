@@ -1,9 +1,9 @@
 # FairShare App
 
-Aplicacion web desarrollada con Spring Boot (Java) en el Backend y React (Vite) en el Frontend, integrada bajo una arquitectura Monorepo limpia y escalable para la gestion y division equitativa de gastos compartidos.
+## Descripcion del Proyecto y Alcance
 
-El backend utiliza Spring Boot 4.1.1 y compila para Java 17.
-El contenedor de la aplicacion se ejecuta con el usuario sin privilegios `10001:10001`.
+FairShare es una plataforma web para la gestion inteligente y liquidacion transparente de gastos compartidos en grupos de convivencia, viajes, parejas o proyectos laborales.
+El alcance del sistema comprende la administracion de usuarios y espacios compartidos, el registro de ingresos mensuales para el calculo de distribuciones proporcionales por capacidad economica, la imputacion de gastos con multiples reglas de reparto (equitativa, proporcional a ingresos, participacion parcial y personalizada), la simplificacion automatica de deudas cruzadas para minimizar transferencias, el control de vencimientos en plantillas de gastos recurrentes y el cierre de liquidaciones periodicas con validacion de tope presupuestario.
 
 ---
 
@@ -125,11 +125,13 @@ docker compose up --build
 | `PATCH` | `/api/v1/espacios/{id}/miembros/{usuarioId}/rol` | Asigna o modifica el rol del miembro (ADMIN o MIEMBRO) |
 
 ### 5. Gestion de Sueldos
+Permite registrar y consultar los ingresos mensuales de los usuarios asociados a un periodo especifico (`mes` y `anio`). La regla de division proporcional de gastos (`PROPORCIONAL_INGRESOS`) utiliza automaticamente el sueldo correspondiente al mes y anio en que se realizo el gasto, con retrocompatibilidad al ultimo sueldo registrado o al sueldo base del usuario si no hubiese liquidacion especifica.
+
 | Metodo | Endpoint | Descripcion |
 | :--- | :--- | :--- |
-| `POST` | `/api/sueldos` | Registra el sueldo de un usuario y sincroniza la tasa proporcional |
-| `GET` | `/api/sueldos` | Lista todos los sueldos registrados en el sistema |
-| `PUT` | `/api/sueldos/{id}` | Actualiza monto, periodicidad o tipo de sueldo |
+| `POST` | `/api/sueldos` | Registra o actualiza (upsert) el sueldo de un usuario para un periodo (`mes` y `anio`) y sincroniza su perfil |
+| `GET` | `/api/sueldos` | Lista todos los sueldos registrados en el sistema (filtro opcional por query param `usuarioId`) |
+| `PUT` | `/api/sueldos/{id}` | Actualiza monto, periodicidad, tipo de sueldo, mes o anio |
 | `DELETE` | `/api/sueldos/{id}` | Elimina un registro de sueldo |
 
 ### 6. Gestion de Gastos
@@ -147,7 +149,7 @@ docker compose up --build
 | `GET` | `/api/v1/espacios/{id}/balance` | Calcula y retorna la matriz simplificada de deudas pendientes del espacio |
 | `POST` | `/api/v1/deudas/{id}/saldar` | Registra el pago total o parcial de una deuda pendiente |
 
-### 7. Plantillas, Gastos Recurrentes y Favoritos
+### 8. Plantillas, Gastos Recurrentes y Favoritos
 | Metodo | Endpoint | Descripcion |
 | :--- | :--- | :--- |
 | `POST` | `/api/v1/espacios/{id}/favoritos` | Registra una plantilla de gasto favorita con frecuencia de ajuste y montos base/variable |
@@ -157,6 +159,14 @@ docker compose up --build
 | `POST` | `/api/v1/favoritos/{id}/ejecutar` | Dispara el gasto rapido en 1 clic (bloquea y exige actualizacion si la tarifa vencio) |
 | `PUT` | `/api/v1/favoritos/{id}/actualizar-monto` | Actualiza montos base/variable y renueva la fecha de revision del ciclo |
 | `DELETE` | `/api/v1/favoritos/{id}` | Elimina una plantilla favorita del sistema |
+
+### 9. Liquidaciones y Cierre de Presupuesto (Checkout)
+Permite procesar el cierre de gastos pendientes en un espacio con validacion de control presupuestario ("control de stock"). Valida que el monto acumulado a liquidar no exceda el presupuesto base disponible en el espacio, efectua el debito correspondiente y transiciona los gastos al estado `LIQUIDADO`.
+
+| Metodo | Endpoint | Descripcion |
+| :--- | :--- | :--- |
+| `POST` | `/api/v1/espacios/{id}/liquidaciones/cierre` | Procesa el checkout y cierre de gastos pendientes, debitando el monto del presupuesto base del espacio |
+| `GET` | `/api/v1/espacios/{id}/liquidaciones/historial` | Consulta el historial de liquidaciones cerradas (soporta filtros `desde`, `hasta`, `anio`, `mes`) |
 
 ---
 

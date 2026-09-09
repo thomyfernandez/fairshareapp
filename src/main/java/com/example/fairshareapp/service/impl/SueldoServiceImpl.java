@@ -56,13 +56,24 @@ public class SueldoServiceImpl implements SueldoService {
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado con id: " + usuarioId));
 
-        Sueldo sueldo = Sueldo.builder()
-                .monto(sueldoRequest.getMonto())
-                .tipo(sueldoRequest.getTipo())
-                .frecuencia(sueldoRequest.getFrecuencia())
-                .usuario(usuario)
-                .fechaInicio(LocalDate.now(ZoneId.systemDefault()))
-                .build();
+        LocalDate ahora = LocalDate.now(ZoneId.systemDefault());
+        int mes = sueldoRequest.getMes() != null ? sueldoRequest.getMes() : ahora.getMonthValue();
+        int anio = sueldoRequest.getAnio() != null ? sueldoRequest.getAnio() : ahora.getYear();
+
+        // Si ya existe un registro para este usuario, anio y mes, se actualiza (upsert)
+        Sueldo sueldo = sueldoRepository.findByUsuario_IdAndAnioAndMes(usuarioId, anio, mes)
+                .orElseGet(() -> Sueldo.builder()
+                        .usuario(usuario)
+                        .fechaInicio(ahora)
+                        .mes(mes)
+                        .anio(anio)
+                        .build());
+
+        sueldo.setMonto(sueldoRequest.getMonto());
+        sueldo.setTipo(sueldoRequest.getTipo());
+        sueldo.setFrecuencia(sueldoRequest.getFrecuencia());
+        sueldo.setMes(mes);
+        sueldo.setAnio(anio);
 
         // Sincroniza el sueldo en el usuario para calculos proporcionales
         if (sueldoRequest.getMonto() != null) {
@@ -126,6 +137,12 @@ public class SueldoServiceImpl implements SueldoService {
         sueldo.setMonto(sueldoRequest.getMonto());
         sueldo.setTipo(sueldoRequest.getTipo());
         sueldo.setFrecuencia(sueldoRequest.getFrecuencia());
+        if (sueldoRequest.getMes() != null) {
+            sueldo.setMes(sueldoRequest.getMes());
+        }
+        if (sueldoRequest.getAnio() != null) {
+            sueldo.setAnio(sueldoRequest.getAnio());
+        }
 
         if (sueldo.getUsuario() != null && sueldoRequest.getMonto() != null) {
             Usuario usuario = sueldo.getUsuario();
@@ -190,6 +207,12 @@ public class SueldoServiceImpl implements SueldoService {
         }
         if (sueldo.getFrecuencia() != null) {
             sueldoFinded.setFrecuencia(sueldo.getFrecuencia());
+        }
+        if (sueldo.getMes() != null) {
+            sueldoFinded.setMes(sueldo.getMes());
+        }
+        if (sueldo.getAnio() != null) {
+            sueldoFinded.setAnio(sueldo.getAnio());
         }
 
         return sueldoRepository.save(sueldoFinded);

@@ -13,6 +13,7 @@ import com.example.fairshareapp.model.entity.Usuario;
 import com.example.fairshareapp.repository.CategoriaRepository;
 import com.example.fairshareapp.repository.EspacioRepository;
 import com.example.fairshareapp.repository.GastoRepository;
+import com.example.fairshareapp.repository.SueldoRepository;
 import com.example.fairshareapp.repository.UsuarioRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -52,6 +53,9 @@ class GastoServiceTest {
 
     @Mock
     private CategoriaRepository categoriaRepository;
+
+    @Mock
+    private SueldoRepository sueldoRepository;
 
     @InjectMocks
     private GastoService gastoService;
@@ -165,6 +169,56 @@ class GastoServiceTest {
         assertNotNull(resultado);
         assertEquals(2, resultado.getParticipantes().size());
         assertEquals(20000.0, resultado.getParticipantes().get(0).getImporte().doubleValue(), 0.01);
+        assertEquals(10000.0, resultado.getParticipantes().get(1).getImporte().doubleValue(), 0.01);
+    }
+
+    /**
+     * Valida que la regla de division proporcional de ingresos utilice los sueldos
+     * registrados especificamente para el mes y anio en que se efectua el gasto.
+     */
+    @Test
+    void registrarGasto_ReglaProporcionalIngresos_UtilizaSueldoDelPeriodoCorrespondiente() {
+        when(espacioRepository.findById(1L)).thenReturn(Optional.of(espacio));
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario1));
+        when(usuarioRepository.findById(2L)).thenReturn(Optional.of(usuario2));
+        when(gastoRepository.save(any(Gasto.class))).thenAnswer(invocation -> {
+            Gasto g = invocation.getArgument(0);
+            g.setId(25L);
+            return g;
+        });
+
+        // Simula sueldos especificos para septiembre 2026: usuario1 = 300k (75%), usuario2 = 100k (25%)
+        com.example.fairshareapp.model.entity.Sueldo sueldoU1 = com.example.fairshareapp.model.entity.Sueldo.builder()
+                .monto(BigDecimal.valueOf(300000.0))
+                .mes(9)
+                .anio(2026)
+                .build();
+        com.example.fairshareapp.model.entity.Sueldo sueldoU2 = com.example.fairshareapp.model.entity.Sueldo.builder()
+                .monto(BigDecimal.valueOf(100000.0))
+                .mes(9)
+                .anio(2026)
+                .build();
+
+        when(sueldoRepository.findByUsuario_IdAndAnioAndMes(1L, 2026, 9)).thenReturn(Optional.of(sueldoU1));
+        when(sueldoRepository.findByUsuario_IdAndAnioAndMes(2L, 2026, 9)).thenReturn(Optional.of(sueldoU2));
+
+        CrearGastoDTO dto = CrearGastoDTO.builder()
+                .descripcion("Expensas Septiembre")
+                .monto(BigDecimal.valueOf(40000.0))
+                .fecha(java.time.LocalDate.of(2026, 9, 5))
+                .pagadorId(1L)
+                .regla(ReglaDivision.PROPORCIONAL_INGRESOS)
+                .participantes(Arrays.asList(
+                        GastoParticipanteDTO.builder().usuarioId(1L).build(),
+                        GastoParticipanteDTO.builder().usuarioId(2L).build()
+                ))
+                .build();
+
+        GastoDetalleDTO resultado = gastoService.registrarGasto(1L, dto);
+
+        assertNotNull(resultado);
+        assertEquals(2, resultado.getParticipantes().size());
+        assertEquals(30000.0, resultado.getParticipantes().get(0).getImporte().doubleValue(), 0.01);
         assertEquals(10000.0, resultado.getParticipantes().get(1).getImporte().doubleValue(), 0.01);
     }
 

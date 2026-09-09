@@ -66,8 +66,14 @@ public class MiembroServiceImpl implements MiembroService {
         Usuario usuario = usuarioRepository.findById(unirseDTO.getUsuarioId())
                 .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado con id: " + unirseDTO.getUsuarioId()));
 
-        if (miembroEspacioRepository.existsByEspacioIdAndUsuarioId(espacioId, usuario.getId())) {
-            throw new ReglaInvalidaException("El usuario ya pertenece al espacio indicado");
+        java.util.Optional<MiembroEspacio> miembroExistente = miembroEspacioRepository.findByEspacioIdAndUsuarioId(espacioId, usuario.getId());
+        if (miembroExistente.isPresent()) {
+            MiembroEspacio miembro = miembroExistente.get();
+            if (unirseDTO.getSueldoDeclarado() != null) {
+                miembro.setSueldoDeclarado(unirseDTO.getSueldoDeclarado());
+                miembro = miembroEspacioRepository.save(miembro);
+            }
+            return mapToResponseDTO(miembro);
         }
 
         boolean esPrimerMiembro = miembroEspacioRepository.findByEspacioId(espacioId).isEmpty();
