@@ -5,8 +5,10 @@ import com.example.fairshareapp.exception.EmailYaRegistradoException;
 import com.example.fairshareapp.model.entity.Usuario;
 import com.example.fairshareapp.model.request.LoginRequest;
 import com.example.fairshareapp.model.request.RegistroUsuarioRequest;
+import com.example.fairshareapp.model.response.LoginResponse;
 import com.example.fairshareapp.model.response.UsuarioResponse;
 import com.example.fairshareapp.repository.UsuarioRepository;
+import com.example.fairshareapp.security.JwtService;
 import com.example.fairshareapp.service.UsuarioService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +24,7 @@ import java.util.List;
 public class UsuarioServiceImpl implements UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
+    private final JwtService jwtService;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     public void registrarUsuario(RegistroUsuarioRequest request) {
@@ -40,13 +43,17 @@ public class UsuarioServiceImpl implements UsuarioService {
         usuarioRepository.save(newUsuario);
     }
 
-    public void loginUsuario(LoginRequest request) {
+    public LoginResponse loginUsuario(LoginRequest request) {
         Usuario usuario = usuarioRepository.getByEmail(request.email())
                 .orElseThrow(CredencialesInvalidasException::new);
 
         if (!passwordEncoder.matches(request.contra(), usuario.getContra())) {
             throw new CredencialesInvalidasException();
         }
+
+        String token = jwtService.generarToken(usuario.getEmail());
+
+        return new LoginResponse(token, usuario.getEmail(), usuario.getNombre(), usuario.getApellido());
     }
 
     public List<UsuarioResponse> getAllUsuarios() {
