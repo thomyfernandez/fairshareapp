@@ -23,6 +23,18 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Maneja excepciones cuando un usuario intenta unirse a un espacio al que ya pertenece.
+     *
+     * @param ex Excepcion de membresia duplicada capturada.
+     * @return Respuesta con codigo HTTP 409 Conflict.
+     */
+    @ExceptionHandler(MembresiaDuplicadaException.class)
+    public ResponseEntity<String> handleMembresiaDuplicada(MembresiaDuplicadaException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
+    }
+
+
+    /**
      * Maneja excepciones cuando las credenciales de autenticacion son invalidas.
      *
      * @param ex Excepcion capturada.

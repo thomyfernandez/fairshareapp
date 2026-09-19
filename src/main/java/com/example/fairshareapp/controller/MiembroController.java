@@ -26,7 +26,7 @@ import java.util.List;
  * asignar roles y gestionar el sueldo mensual declarado.
  */
 @RestController
-@RequestMapping("/api/v1/espacios/{id}")
+@RequestMapping("/api/v1/espacios")
 public class MiembroController {
 
     private final MiembroService miembroService;
@@ -41,16 +41,28 @@ public class MiembroController {
     }
 
     /**
-     * Une a un usuario a un espacio compartido validando el codigo de invitacion.
+     * Une a un usuario a un espacio compartido validando el codigo de invitacion e identificador.
      *
      * @param id Identificador unico del espacio al que se desea unir.
      * @param unirseDTO Datos de union, incluyendo codigo, usuario y sueldo declarado opcional.
      * @return ResponseEntity con el MiembroResponseDTO creado y codigo HTTP 201 Created.
      */
-    @PostMapping("/unirse")
+    @PostMapping("/{id}/unirse")
     public ResponseEntity<MiembroResponseDTO> unirseAEspacio(@PathVariable Long id,
-                                                              @Valid @RequestBody UnirseEspacioDTO unirseDTO) {
+                                                             @Valid @RequestBody UnirseEspacioDTO unirseDTO) {
         MiembroResponseDTO response = miembroService.unirseAEspacio(id, unirseDTO);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    /**
+     * Une a un usuario a un espacio compartido directamente a partir de su codigo de invitacion.
+     *
+     * @param unirseDTO Datos conteniendo el codigo de invitacion y el identificador de usuario.
+     * @return ResponseEntity con el MiembroResponseDTO creado y codigo HTTP 201 Created.
+     */
+    @PostMapping("/unirse")
+    public ResponseEntity<MiembroResponseDTO> unirsePorCodigo(@Valid @RequestBody UnirseEspacioDTO unirseDTO) {
+        MiembroResponseDTO response = miembroService.unirsePorCodigo(unirseDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -60,7 +72,7 @@ public class MiembroController {
      * @param id Identificador unico del espacio.
      * @return ResponseEntity con la lista de MiembroResponseDTO y codigo HTTP 200 OK.
      */
-    @GetMapping("/miembros")
+    @GetMapping("/{id}/miembros")
     public ResponseEntity<List<MiembroResponseDTO>> listarMiembros(@PathVariable Long id) {
         List<MiembroResponseDTO> response = miembroService.listarMiembros(id);
         return ResponseEntity.ok(response);
@@ -74,27 +86,31 @@ public class MiembroController {
      * @param actualizarSueldoDTO Datos con el nuevo sueldo declarado.
      * @return ResponseEntity con el MiembroResponseDTO actualizado y codigo HTTP 200 OK.
      */
-    @PutMapping("/miembros/{usuarioId}/sueldo")
+    @PutMapping("/{id}/miembros/{usuarioId}/sueldo")
     public ResponseEntity<MiembroResponseDTO> actualizarSueldo(@PathVariable Long id,
-                                                                @PathVariable Long usuarioId,
-                                                                @Valid @RequestBody ActualizarSueldoDTO actualizarSueldoDTO) {
+                                                               @PathVariable Long usuarioId,
+                                                               @Valid @RequestBody ActualizarSueldoDTO actualizarSueldoDTO) {
         MiembroResponseDTO response = miembroService.actualizarSueldo(id, usuarioId, actualizarSueldoDTO);
         return ResponseEntity.ok(response);
     }
 
     /**
-     * Asigna o modifica el rol de un miembro dentro de un espacio.
+     * Asigna o modifica el rol de un miembro dentro de un espacio validando permisos del solicitante.
      *
      * @param id Identificador unico del espacio.
      * @param usuarioId Identificador del usuario miembro.
      * @param rol Nuevo rol a asignar.
+     * @param solicitanteId Identificador opcional del usuario administrador solicitante.
      * @return ResponseEntity con el MiembroResponseDTO con el rol actualizado.
      */
-    @PatchMapping("/miembros/{usuarioId}/rol")
+    @PatchMapping("/{id}/miembros/{usuarioId}/rol")
     public ResponseEntity<MiembroResponseDTO> asignarRol(@PathVariable Long id,
-                                                          @PathVariable Long usuarioId,
-                                                          @RequestParam RolMiembro rol) {
-        MiembroResponseDTO response = miembroService.asignarRol(id, usuarioId, rol);
+                                                         @PathVariable Long usuarioId,
+                                                         @RequestParam RolMiembro rol,
+                                                         @RequestParam(required = false) Long solicitanteId) {
+        MiembroResponseDTO response = (solicitanteId != null)
+                ? miembroService.asignarRol(id, usuarioId, rol, solicitanteId)
+                : miembroService.asignarRol(id, usuarioId, rol);
         return ResponseEntity.ok(response);
     }
 }

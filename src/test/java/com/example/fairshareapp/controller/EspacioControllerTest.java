@@ -23,7 +23,9 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -220,5 +222,85 @@ class EspacioControllerTest {
                         .param("presupuestoBase", "180000.00"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.presupuestoBase").value(180000.00));
+    }
+
+    /**
+     * Valida la obtencion de un espacio por su codigo unico retornando codigo HTTP 200 OK.
+     */
+    @Test
+    void obtenerEspacioPorCodigo_Existente_RetornaOk() throws Exception {
+        when(espacioService.obtenerEspacioPorCodigo("DEPTO-BEL")).thenReturn(respuestaMock);
+
+        mockMvc.perform(get("/api/v1/espacios/codigo/DEPTO-BEL"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.codigo").value("DEPTO-BEL"))
+                .andExpect(jsonPath("$.nombre").value("Depto Belgrano"));
+    }
+
+    /**
+     * Valida que al buscar por un codigo inexistente se retorne codigo HTTP 404 Not Found.
+     */
+    @Test
+    void obtenerEspacioPorCodigo_Inexistente_RetornaNotFound() throws Exception {
+        when(espacioService.obtenerEspacioPorCodigo("COD-FALSO"))
+                .thenThrow(new RecursoNoEncontradoException("Espacio no encontrado con codigo: COD-FALSO"));
+
+        mockMvc.perform(get("/api/v1/espacios/codigo/COD-FALSO"))
+                .andExpect(status().isNotFound());
+    }
+
+    /**
+     * Valida la actualizacion de un espacio pasando el solicitanteId retornando codigo HTTP 200 OK.
+     */
+    @Test
+    void actualizarEspacio_ConSolicitante_RetornaOk() throws Exception {
+        EspacioResponseDTO respuestaActualizada = EspacioResponseDTO.builder()
+                .id(1L)
+                .nombre("Depto Belgrano Admin")
+                .tipo(TipoEspacio.HOGAR)
+                .reglaReparto(ReglaReparto.PROPORCIONAL)
+                .presupuestoBase(BigDecimal.valueOf(250000.00))
+                .build();
+
+        when(espacioService.actualizarEspacio(eq(1L), any(EspacioUpdateDTO.class), eq(10L)))
+                .thenReturn(respuestaActualizada);
+
+        String jsonUpdate = """
+                {
+                    "nombre": "Depto Belgrano Admin",
+                    "reglaReparto": "PROPORCIONAL",
+                    "presupuestoBase": 250000.00
+                }
+                """;
+
+        mockMvc.perform(put("/api/v1/espacios/1")
+                        .param("solicitanteId", "10")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonUpdate))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nombre").value("Depto Belgrano Admin"));
+    }
+
+    /**
+     * Valida la eliminacion de un espacio sin solicitante retornando codigo HTTP 204 No Content.
+     */
+    @Test
+    void eliminarEspacio_SinSolicitante_RetornaNoContent() throws Exception {
+        mockMvc.perform(delete("/api/v1/espacios/1"))
+                .andExpect(status().isNoContent());
+
+        verify(espacioService).eliminarEspacio(1L);
+    }
+
+    /**
+     * Valida la eliminacion de un espacio con solicitante retornando codigo HTTP 204 No Content.
+     */
+    @Test
+    void eliminarEspacio_ConSolicitante_RetornaNoContent() throws Exception {
+        mockMvc.perform(delete("/api/v1/espacios/1")
+                        .param("solicitanteId", "5"))
+                .andExpect(status().isNoContent());
+
+        verify(espacioService).eliminarEspacio(1L, 5L);
     }
 }

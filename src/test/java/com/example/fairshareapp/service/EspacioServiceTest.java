@@ -8,7 +8,9 @@ import com.example.fairshareapp.model.dto.EspacioUpdateDTO;
 import com.example.fairshareapp.model.entity.Espacio;
 import com.example.fairshareapp.model.enums.ReglaReparto;
 import com.example.fairshareapp.model.enums.TipoEspacio;
+import com.example.fairshareapp.model.enums.RolMiembro;
 import com.example.fairshareapp.repository.EspacioRepository;
+import com.example.fairshareapp.repository.MiembroEspacioRepository;
 import com.example.fairshareapp.service.impl.EspacioServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,13 +32,17 @@ import static org.mockito.Mockito.when;
 
 /**
  * Pruebas unitarias para validar la logica de negocio de EspacioService,
- * cubriendo creacion, edicion de reglas (50/50 vs Proporcional) y fijacion de presupuesto base.
+ * cubriendo creacion, edicion de reglas (50/50 vs Proporcional), fijacion de presupuesto base
+ * y verificacion de permisos de administracion.
  */
 @ExtendWith(MockitoExtension.class)
 class EspacioServiceTest {
 
     @Mock
     private EspacioRepository espacioRepository;
+
+    @Mock
+    private MiembroEspacioRepository miembroEspacioRepository;
 
     @InjectMocks
     private EspacioServiceImpl espacioService;
@@ -216,12 +222,12 @@ class EspacioServiceTest {
     }
 
     /**
-     * Valida la actualizacion completa de un espacio existente.
+     * Valida la actualizacion completa de un espacio existente sin solicitante.
      */
     @Test
     void actualizarEspacio_DatosValidos_RetornaActualizado() {
         when(espacioRepository.findById(1L)).thenReturn(Optional.of(espacioExistente));
-        when(espacioRepository.existsByNombreAndIdNot("Depto Renovado", 1L)).thenReturn(false);
+        when(espacioRepository.existsByNombreIgnoreCaseAndIdNot("Depto Renovado", 1L)).thenReturn(false);
         when(espacioRepository.save(any(Espacio.class))).thenAnswer(i -> i.getArgument(0));
 
         EspacioUpdateDTO updateDTO = EspacioUpdateDTO.builder()
@@ -239,6 +245,79 @@ class EspacioServiceTest {
     }
 
     /**
+     * Valida la actualizacion de un espacio cuando el solicitante tiene rol de ADMIN.
+     */
+    @Test
+    void actualizarEspacio_ConSolicitanteAdmin_RetornaActualizado() {
+        when(miembroEspacioRepository.existsByEspacioIdAndUsuarioId(1L, 10L)).thenReturn(true);
+        when(miembroEspacioRepository.existsByEspacioIdAndUsuarioIdAndRol(1L, 10L, RolMiembro.ADMIN)).thenReturn(true);
+        when(espacioRepository.findById(1L)).thenReturn(Optional.of(espacioExistente));
+        when(espacioRepository.save(any(Espacio.class))).thenAnswer(i -> i.getArgument(0));
+
+        EspacioUpdateDTO updateDTO = EspacioUpdateDTO.builder()
+                .descripcion("Nueva descripcion")
+                .build();
+
+        EspacioResponseDTO resultado = espacioService.actualizarEspacio(1L, updateDTO, 10L);
+
+        assertNotNull(resultado);
+        assertEquals("Nueva descripcion", resultado.getDescripcion());
+    }
+
+    /**
+     * Valida que se rechace la actualizacion si el solicitante no tiene rol de ADMIN.
+     */
+    @Test
+    void actualizarEspacio_ConSolicitanteNoAdmin_LanzaReglaInvalidaException() {
+        when(miembroEspacioRepository.existsByEspacioIdAndUsuarioId(1L, 10L)).thenReturn(true);
+        when(miembroEspacioRepository.existsByEspacioIdAndUsuarioIdAndRol(1L, 10L, RolMiembro.ADMIN)).thenReturn(false);
+
+        EspacioUpdateDTO updateDTO = EspacioUpdateDTO.builder()
+                .descripcion("Intento sin permisos")
+                .build();
+
+        assertThrows(ReglaInvalidaException.class, () -> espacioService.actualizarEspacio(1L, updateDTO, 10L));
+    }
+
+    /**
+     * Valida que se rechace la actualizacion si el solicitante no pertenece al espacio.
+     */
+    @Test
+    void actualizarEspacio_ConSolicitanteNoMiembro_LanzaRecursoNoEncontradoException() {
+        when(miembroEspacioRepository.existsByEspacioIdAndUsuarioId(1L, 99L)).thenReturn(false);
+
+        EspacioUpdateDTO updateDTO = EspacioUpdateDTO.builder()
+                .descripcion("Intento no miembro")
+                .build();
+
+        assertThrows(RecursoNoEncontradoException.class, () -> espacioService.actualizarEspacio(1L, updateDTO, 99L));
+    }
+
+    /**
+     * Valida la obtencion de un espacio por su codigo unico.
+     */
+    @Test
+    void obtenerEspacioPorCodigo_Existente_RetornaDTO() {
+        when(espacioRepository.findByCodigo("DEPTO-PAL")).thenReturn(Optional.of(espacioExistente));
+
+        EspacioResponseDTO resultado = espacioService.obtenerEspacioPorCodigo("DEPTO-PAL");
+
+        assertNotNull(resultado);
+        assertEquals("DEPTO-PAL", resultado.getCodigo());
+        assertEquals("Depto Palermo", resultado.getNombre());
+    }
+
+    /**
+     * Valida que obtener un espacio por codigo inexistente lance RecursoNoEncontradoException.
+     */
+    @Test
+    void obtenerEspacioPorCodigo_Inexistente_LanzaRecursoNoEncontradoException() {
+        when(espacioRepository.findByCodigo("COD-FALSO")).thenReturn(Optional.empty());
+
+        assertThrows(RecursoNoEncontradoException.class, () -> espacioService.obtenerEspacioPorCodigo("COD-FALSO"));
+    }
+
+    /**
      * Valida el listado de todos los espacios disponibles.
      */
     @Test
@@ -252,7 +331,7 @@ class EspacioServiceTest {
     }
 
     /**
-     * Valida la eliminacion exitosa de un espacio.
+     * Valida la eliminacion exitosa de un espacio sin solicitante.
      */
     @Test
     void eliminarEspacio_Existente_EliminaCorrectamente() {
@@ -261,5 +340,30 @@ class EspacioServiceTest {
         espacioService.eliminarEspacio(1L);
 
         verify(espacioRepository).deleteById(1L);
+    }
+
+    /**
+     * Valida la eliminacion de un espacio cuando el solicitante tiene rol de ADMIN.
+     */
+    @Test
+    void eliminarEspacio_ConSolicitanteAdmin_EliminaCorrectamente() {
+        when(miembroEspacioRepository.existsByEspacioIdAndUsuarioId(1L, 5L)).thenReturn(true);
+        when(miembroEspacioRepository.existsByEspacioIdAndUsuarioIdAndRol(1L, 5L, RolMiembro.ADMIN)).thenReturn(true);
+        when(espacioRepository.existsById(1L)).thenReturn(true);
+
+        espacioService.eliminarEspacio(1L, 5L);
+
+        verify(espacioRepository).deleteById(1L);
+    }
+
+    /**
+     * Valida que se rechace la eliminacion de un espacio si el solicitante no es ADMIN.
+     */
+    @Test
+    void eliminarEspacio_ConSolicitanteNoAdmin_LanzaReglaInvalidaException() {
+        when(miembroEspacioRepository.existsByEspacioIdAndUsuarioId(1L, 5L)).thenReturn(true);
+        when(miembroEspacioRepository.existsByEspacioIdAndUsuarioIdAndRol(1L, 5L, RolMiembro.ADMIN)).thenReturn(false);
+
+        assertThrows(ReglaInvalidaException.class, () -> espacioService.eliminarEspacio(1L, 5L));
     }
 }

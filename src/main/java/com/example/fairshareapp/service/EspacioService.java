@@ -48,6 +48,16 @@ public interface EspacioService {
     EspacioResponseDTO actualizarEspacio(Long id, EspacioUpdateDTO updateDTO);
 
     /**
+     * Actualiza los datos de un espacio existente validando permisos del solicitante.
+     *
+     * @param id Identificador unico del espacio a actualizar.
+     * @param updateDTO Informacion con los cambios solicitados.
+     * @param solicitanteId Identificador del usuario que solicita la modificacion (debe ser ADMIN).
+     * @return EspacioResponseDTO actualizado.
+     */
+    EspacioResponseDTO actualizarEspacio(Long id, EspacioUpdateDTO updateDTO, Long solicitanteId);
+
+    /**
      * Edita la regla de reparto o distribucion de gastos del espacio (50/50 vs. Proporcional).
      *
      * @param id Identificador unico del espacio.
@@ -57,6 +67,16 @@ public interface EspacioService {
     EspacioResponseDTO editarReglaDistribucion(Long id, ReglaReparto reglaReparto);
 
     /**
+     * Edita la regla de reparto o distribucion de gastos validando permisos del solicitante.
+     *
+     * @param id Identificador unico del espacio.
+     * @param reglaReparto Nueva regla de distribucion seleccionada.
+     * @param solicitanteId Identificador del usuario que solicita la modificacion (debe ser ADMIN).
+     * @return EspacioResponseDTO con la regla actualizada.
+     */
+    EspacioResponseDTO editarReglaDistribucion(Long id, ReglaReparto reglaReparto, Long solicitanteId);
+
+    /**
      * Fija o actualiza el presupuesto base financiero del espacio compartido.
      *
      * @param id Identificador unico del espacio.
@@ -64,6 +84,16 @@ public interface EspacioService {
      * @return EspacioResponseDTO con el presupuesto fijado.
      */
     EspacioResponseDTO fijarPresupuestoBase(Long id, BigDecimal presupuestoBase);
+
+    /**
+     * Fija o actualiza el presupuesto base financiero validando permisos del solicitante.
+     *
+     * @param id Identificador unico del espacio.
+     * @param presupuestoBase Nuevo monto de presupuesto base.
+     * @param solicitanteId Identificador del usuario que solicita la modificacion (debe ser ADMIN).
+     * @return EspacioResponseDTO con el presupuesto fijado.
+     */
+    EspacioResponseDTO fijarPresupuestoBase(Long id, BigDecimal presupuestoBase, Long solicitanteId);
 
     /**
      * Retorna la lista con todos los espacios registrados en la plataforma.
@@ -78,4 +108,12 @@ public interface EspacioService {
      * @param id Identificador unico del espacio a eliminar.
      */
     void eliminarEspacio(Long id);
+
+    /**
+     * Elimina un espacio por su identificador unico validando permisos del solicitante.
+     *
+     * @param id Identificador unico del espacio a eliminar.
+     * @param solicitanteId Identificador del usuario que solicita la eliminacion (debe ser ADMIN).
+     */
+    void eliminarEspacio(Long id, Long solicitanteId);
 }

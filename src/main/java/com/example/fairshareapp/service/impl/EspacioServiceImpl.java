@@ -7,8 +7,11 @@ import com.example.fairshareapp.model.dto.EspacioResponseDTO;
 import com.example.fairshareapp.model.dto.EspacioUpdateDTO;
 import com.example.fairshareapp.model.entity.Espacio;
 import com.example.fairshareapp.model.enums.ReglaReparto;
+import com.example.fairshareapp.model.enums.RolMiembro;
 import com.example.fairshareapp.repository.EspacioRepository;
+import com.example.fairshareapp.repository.MiembroEspacioRepository;
 import com.example.fairshareapp.service.EspacioService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,14 +30,27 @@ public class EspacioServiceImpl implements EspacioService {
     private static final String ESPACIO_NO_ENCONTRADO = "Espacio no encontrado con id: ";
 
     private final EspacioRepository espacioRepository;
+    private final MiembroEspacioRepository miembroEspacioRepository;
 
     /**
-     * Constructor para la inyeccion del repositorio de espacios.
+     * Constructor para compatibilidad sin repositorio de membresias.
      *
      * @param espacioRepository Repositorio de datos para espacios.
      */
     public EspacioServiceImpl(EspacioRepository espacioRepository) {
+        this(espacioRepository, null);
+    }
+
+    /**
+     * Constructor con inyeccion de repositorios de espacios y miembros.
+     *
+     * @param espacioRepository Repositorio de datos para espacios.
+     * @param miembroEspacioRepository Repositorio de datos para membresias.
+     */
+    @Autowired
+    public EspacioServiceImpl(EspacioRepository espacioRepository, MiembroEspacioRepository miembroEspacioRepository) {
         this.espacioRepository = espacioRepository;
+        this.miembroEspacioRepository = miembroEspacioRepository;
     }
 
     /**
@@ -125,14 +141,36 @@ public class EspacioServiceImpl implements EspacioService {
      * @param updateDTO Datos con las modificaciones a aplicar.
      * @return EspacioResponseDTO con los datos actualizados.
      */
+    /**
+     * Actualiza la informacion general de un espacio sin validacion de solicitante.
+     *
+     * @param id Identificador unico del espacio a actualizar.
+     * @param updateDTO Datos con las modificaciones a aplicar.
+     * @return EspacioResponseDTO con los datos actualizados.
+     */
     @Override
     public EspacioResponseDTO actualizarEspacio(Long id, EspacioUpdateDTO updateDTO) {
+        return actualizarEspacio(id, updateDTO, null);
+    }
+
+    /**
+     * Actualiza la informacion general de un espacio validando permisos del solicitante.
+     *
+     * @param id Identificador unico del espacio a actualizar.
+     * @param updateDTO Datos con las modificaciones a aplicar.
+     * @param solicitanteId Identificador del usuario que solicita la modificacion (debe ser ADMIN).
+     * @return EspacioResponseDTO con los datos actualizados.
+     */
+    @Override
+    public EspacioResponseDTO actualizarEspacio(Long id, EspacioUpdateDTO updateDTO, Long solicitanteId) {
+        validarPermisoAdmin(id, solicitanteId);
+
         Espacio espacio = espacioRepository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException(ESPACIO_NO_ENCONTRADO + id));
 
         if (updateDTO.getNombre() != null && !updateDTO.getNombre().trim().isEmpty()) {
             String nuevoNombre = updateDTO.getNombre().trim();
-            if (espacioRepository.existsByNombreAndIdNot(nuevoNombre, id)) {
+            if (espacioRepository.existsByNombreIgnoreCaseAndIdNot(nuevoNombre, id)) {
                 throw new ReglaInvalidaException("Ya existe otro espacio registrado con el nombre: " + nuevoNombre);
             }
             espacio.setNombre(nuevoNombre);
@@ -140,7 +178,7 @@ public class EspacioServiceImpl implements EspacioService {
 
         if (updateDTO.getCodigo() != null && !updateDTO.getCodigo().trim().isEmpty()) {
             String nuevoCodigo = updateDTO.getCodigo().trim().toUpperCase();
-            if (espacioRepository.existsByCodigoAndIdNot(nuevoCodigo, id)) {
+            if (espacioRepository.existsByCodigoIgnoreCaseAndIdNot(nuevoCodigo, id)) {
                 throw new ReglaInvalidaException("Ya existe otro espacio registrado con el codigo: " + nuevoCodigo);
             }
             espacio.setCodigo(nuevoCodigo);
@@ -178,9 +216,24 @@ public class EspacioServiceImpl implements EspacioService {
      */
     @Override
     public EspacioResponseDTO editarReglaDistribucion(Long id, ReglaReparto reglaReparto) {
+        return editarReglaDistribucion(id, reglaReparto, null);
+    }
+
+    /**
+     * Modifica especificamente la regla de distribucion validando permisos del solicitante.
+     *
+     * @param id Identificador del espacio.
+     * @param reglaReparto Nueva regla de distribucion a fijar.
+     * @param solicitanteId Identificador del usuario solicitante (debe ser ADMIN).
+     * @return EspacioResponseDTO con la regla modificada.
+     */
+    @Override
+    public EspacioResponseDTO editarReglaDistribucion(Long id, ReglaReparto reglaReparto, Long solicitanteId) {
         if (reglaReparto == null) {
             throw new ReglaInvalidaException("La regla de reparto no puede ser nula");
         }
+        validarPermisoAdmin(id, solicitanteId);
+
         Espacio espacio = espacioRepository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException(ESPACIO_NO_ENCONTRADO + id));
 
@@ -198,9 +251,24 @@ public class EspacioServiceImpl implements EspacioService {
      */
     @Override
     public EspacioResponseDTO fijarPresupuestoBase(Long id, BigDecimal presupuestoBase) {
+        return fijarPresupuestoBase(id, presupuestoBase, null);
+    }
+
+    /**
+     * Fija o ajusta el presupuesto base financiero validando permisos del solicitante.
+     *
+     * @param id Identificador del espacio.
+     * @param presupuestoBase Monto a establecer como presupuesto base.
+     * @param solicitanteId Identificador del usuario solicitante (debe ser ADMIN).
+     * @return EspacioResponseDTO con el nuevo presupuesto base.
+     */
+    @Override
+    public EspacioResponseDTO fijarPresupuestoBase(Long id, BigDecimal presupuestoBase, Long solicitanteId) {
         if (presupuestoBase == null || presupuestoBase.compareTo(BigDecimal.ZERO) < 0) {
             throw new ReglaInvalidaException("El presupuesto base no puede ser nulo ni negativo");
         }
+        validarPermisoAdmin(id, solicitanteId);
+
         Espacio espacio = espacioRepository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException(ESPACIO_NO_ENCONTRADO + id));
 
@@ -229,10 +297,40 @@ public class EspacioServiceImpl implements EspacioService {
      */
     @Override
     public void eliminarEspacio(Long id) {
+        eliminarEspacio(id, null);
+    }
+
+    /**
+     * Elimina el espacio indicado por su id validando permisos del solicitante.
+     *
+     * @param id Identificador unico del espacio.
+     * @param solicitanteId Identificador del usuario solicitante (debe ser ADMIN).
+     */
+    @Override
+    public void eliminarEspacio(Long id, Long solicitanteId) {
+        validarPermisoAdmin(id, solicitanteId);
+
         if (!espacioRepository.existsById(id)) {
             throw new RecursoNoEncontradoException(ESPACIO_NO_ENCONTRADO + id);
         }
         espacioRepository.deleteById(id);
+    }
+
+    /**
+     * Valida que el usuario solicitante pertenezca al espacio y posea el rol de ADMIN.
+     *
+     * @param espacioId Identificador unico del espacio.
+     * @param solicitanteId Identificador del usuario solicitante.
+     */
+    private void validarPermisoAdmin(Long espacioId, Long solicitanteId) {
+        if (solicitanteId != null && miembroEspacioRepository != null) {
+            if (!miembroEspacioRepository.existsByEspacioIdAndUsuarioId(espacioId, solicitanteId)) {
+                throw new RecursoNoEncontradoException("El usuario con id " + solicitanteId + " no es miembro del espacio con id " + espacioId);
+            }
+            if (!miembroEspacioRepository.existsByEspacioIdAndUsuarioIdAndRol(espacioId, solicitanteId, RolMiembro.ADMIN)) {
+                throw new ReglaInvalidaException("Acceso denegado: se requieren permisos de administrador en el espacio para realizar esta operacion");
+            }
+        }
     }
 
     /**
