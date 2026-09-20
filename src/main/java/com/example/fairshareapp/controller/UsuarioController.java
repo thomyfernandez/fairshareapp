@@ -2,6 +2,7 @@ package com.example.fairshareapp.controller;
 
 import com.example.fairshareapp.model.request.LoginRequest;
 import com.example.fairshareapp.model.request.RegistroUsuarioRequest;
+import com.example.fairshareapp.model.response.LoginResponse;
 import com.example.fairshareapp.model.response.UsuarioResponse;
 import com.example.fairshareapp.service.UsuarioService;
 import jakarta.validation.Valid;
@@ -48,15 +49,15 @@ public class UsuarioController {
     }
 
     /**
-     * Valida las credenciales de acceso para la autenticacion de un usuario.
+     * Valida las credenciales de acceso y autentica a un usuario, generando su JWT de acceso.
      *
      * @param request Credenciales de acceso compuestas por email y contrasena.
-     * @return ResponseEntity con mensaje de confirmacion y codigo HTTP 200 OK.
+     * @return ResponseEntity con el token JWT y los datos del usuario, codigo HTTP 200 OK.
      */
     @PostMapping("/login")
-    public ResponseEntity<String> login(@Valid @RequestBody LoginRequest request) {
-        usuarioService.loginUsuario(request);
-        return ResponseEntity.ok("OK");
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
+        LoginResponse response = usuarioService.loginUsuario(request);
+        return ResponseEntity.ok(response);
     }
 
     /**
