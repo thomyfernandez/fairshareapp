@@ -3,12 +3,13 @@ package com.example.fairshareapp.repository;
 import com.example.fairshareapp.model.entity.MiembroEspacio;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+import com.example.fairshareapp.model.enums.RolMiembro;
 import java.util.List;
 import java.util.Optional;
 
 /**
  * Repositorio Spring Data JPA para la entidad MiembroEspacio.
- * Provee consultas de membresia por espacio y por usuario.
+ * Provee consultas de membresia por espacio, usuario y rol asignado.
  */
 @Repository
 public interface MiembroEspacioRepository extends JpaRepository<MiembroEspacio, Long> {
@@ -46,4 +47,39 @@ public interface MiembroEspacioRepository extends JpaRepository<MiembroEspacio, 
      * @return true si la membresia ya existe, false en caso contrario.
      */
     boolean existsByEspacioIdAndUsuarioId(Long espacioId, Long usuarioId);
+
+    /**
+     * Verifica si un usuario pertenece a un espacio y posee un rol especifico.
+     *
+     * @param espacioId Identificador del espacio.
+     * @param usuarioId Identificador del usuario.
+     * @param rol Rol a verificar (por ejemplo, ADMIN).
+     * @return true si el usuario posee ese rol en el espacio.
+     */
+    boolean existsByEspacioIdAndUsuarioIdAndRol(Long espacioId, Long usuarioId, RolMiembro rol);
+
+    /**
+     * Obtiene los miembros de un espacio filtrados por su rol.
+     *
+     * @param espacioId Identificador del espacio.
+     * @param rol Rol de membresia buscado.
+     * @return Lista de miembros con el rol indicado.
+     */
+    List<MiembroEspacio> findByEspacioIdAndRol(Long espacioId, RolMiembro rol);
+
+    /**
+     * Cuenta la cantidad de miembros registrados en un espacio.
+     *
+     * @param espacioId Identificador del espacio.
+     * @return Cantidad total de miembros.
+     */
+    long countByEspacioId(Long espacioId);
+
+    /**
+     * Elimina la membresia de un usuario dentro de un espacio determinado.
+     *
+     * @param espacioId Identificador del espacio.
+     * @param usuarioId Identificador del usuario.
+     */
+    void deleteByEspacioIdAndUsuarioId(Long espacioId, Long usuarioId);
 }

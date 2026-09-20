@@ -1,5 +1,6 @@
 package com.example.fairshareapp.service.impl;
 
+import com.example.fairshareapp.exception.MembresiaDuplicadaException;
 import com.example.fairshareapp.exception.RecursoNoEncontradoException;
 import com.example.fairshareapp.exception.ReglaInvalidaException;
 import com.example.fairshareapp.model.dto.ActualizarSueldoDTO;
@@ -66,14 +67,12 @@ public class MiembroServiceImpl implements MiembroService {
         Usuario usuario = usuarioRepository.findById(unirseDTO.getUsuarioId())
                 .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado con id: " + unirseDTO.getUsuarioId()));
 
-        java.util.Optional<MiembroEspacio> miembroExistente = miembroEspacioRepository.findByEspacioIdAndUsuarioId(espacioId, usuario.getId());
-        if (miembroExistente.isPresent()) {
-            MiembroEspacio miembro = miembroExistente.get();
-            if (unirseDTO.getSueldoDeclarado() != null) {
-                miembro.setSueldoDeclarado(unirseDTO.getSueldoDeclarado());
-                miembro = miembroEspacioRepository.save(miembro);
-            }
-            return mapToResponseDTO(miembro);
+        if (miembroEspacioRepository.existsByEspacioIdAndUsuarioId(espacioId, usuario.getId())) {
+            throw new MembresiaDuplicadaException("El usuario con id " + usuario.getId() + " ya es miembro del espacio con id " + espacioId);
+        }
+
+        if (unirseDTO.getSueldoDeclarado() != null && unirseDTO.getSueldoDeclarado().compareTo(BigDecimal.ZERO) < 0) {
+            throw new ReglaInvalidaException("El sueldo declarado no puede ser negativo");
         }
 
         boolean esPrimerMiembro = miembroEspacioRepository.findByEspacioId(espacioId).isEmpty();
@@ -87,6 +86,23 @@ public class MiembroServiceImpl implements MiembroService {
 
         MiembroEspacio guardado = miembroEspacioRepository.save(miembro);
         return mapToResponseDTO(guardado);
+    }
+
+    /**
+     * Une a un usuario a un espacio resolviendo el destino unicamente a traves del codigo de invitacion.
+     *
+     * @param unirseDTO Datos de union conteniendo codigo de invitacion, usuario y sueldo opcional.
+     * @return MiembroResponseDTO con el detalle de la membresia registrada.
+     */
+    @Override
+    public MiembroResponseDTO unirsePorCodigo(UnirseEspacioDTO unirseDTO) {
+        if (unirseDTO.getCodigo() == null || unirseDTO.getCodigo().trim().isEmpty()) {
+            throw new ReglaInvalidaException("El codigo de invitacion es obligatorio");
+        }
+        String codigoTrimmed = unirseDTO.getCodigo().trim();
+        Espacio espacio = espacioRepository.findByCodigoIgnoreCase(codigoTrimmed)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Espacio no encontrado con codigo: " + codigoTrimmed));
+        return unirseAEspacio(espacio.getId(), unirseDTO);
     }
 
     /**
@@ -107,7 +123,7 @@ public class MiembroServiceImpl implements MiembroService {
     }
 
     /**
-     * Asigna o modifica el rol de un miembro dentro de un espacio.
+     * Asigna o modifica el rol de un miembro dentro de un espacio sin validacion de solicitante.
      *
      * @param espacioId Identificador del espacio.
      * @param usuarioId Identificador del usuario miembro.
@@ -116,8 +132,25 @@ public class MiembroServiceImpl implements MiembroService {
      */
     @Override
     public MiembroResponseDTO asignarRol(Long espacioId, Long usuarioId, RolMiembro rol) {
+        return asignarRol(espacioId, usuarioId, rol, null);
+    }
+
+    /**
+     * Asigna o modifica el rol de un miembro dentro de un espacio validando que el solicitante sea ADMIN.
+     *
+     * @param espacioId Identificador del espacio.
+     * @param usuarioId Identificador del usuario miembro.
+     * @param rol Nuevo rol a asignar.
+     * @param solicitanteId Identificador del usuario solicitante con permisos administrativos.
+     * @return MiembroResponseDTO con el rol actualizado.
+     */
+    @Override
+    public MiembroResponseDTO asignarRol(Long espacioId, Long usuarioId, RolMiembro rol, Long solicitanteId) {
         if (rol == null) {
             throw new ReglaInvalidaException("El rol a asignar no puede ser nulo");
+        }
+        if (solicitanteId != null) {
+            validarPermisoAdmin(espacioId, solicitanteId);
         }
         MiembroEspacio miembro = obtenerMembresia(espacioId, usuarioId);
         miembro.setRol(rol);
@@ -185,6 +218,63 @@ public class MiembroServiceImpl implements MiembroService {
                 .rol(miembro.getRol())
                 .sueldoDeclarado(miembro.getSueldoDeclarado())
                 .build();
+    }
+
+    /**
+     * Valida que un usuario pertenezca a un espacio compartido, lanzando excepcion si no es miembro.
+     *
+     * @param espacioId Identificador del espacio.
+     * @param usuarioId Identificador del usuario.
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public void validarPertenencia(Long espacioId, Long usuarioId) {
+        if (!miembroEspacioRepository.existsByEspacioIdAndUsuarioId(espacioId, usuarioId)) {
+            throw new RecursoNoEncontradoException("El usuario con id " + usuarioId + " no es miembro del espacio con id " + espacioId);
+        }
+    }
+
+    /**
+     * Valida que un usuario pertenezca a un espacio y posea el rol de ADMIN.
+     *
+     * @param espacioId Identificador del espacio.
+     * @param usuarioId Identificador del usuario.
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public void validarPermisoAdmin(Long espacioId, Long usuarioId) {
+        if (!miembroEspacioRepository.existsByEspacioIdAndUsuarioId(espacioId, usuarioId)) {
+            throw new RecursoNoEncontradoException("El usuario con id " + usuarioId + " no es miembro del espacio con id " + espacioId);
+        }
+        if (!miembroEspacioRepository.existsByEspacioIdAndUsuarioIdAndRol(espacioId, usuarioId, RolMiembro.ADMIN)) {
+            throw new ReglaInvalidaException("Acceso denegado: se requieren permisos de administrador en el espacio");
+        }
+    }
+
+    /**
+     * Comprueba de forma booleana si un usuario es miembro de un espacio.
+     *
+     * @param espacioId Identificador del espacio.
+     * @param usuarioId Identificador del usuario.
+     * @return true si es miembro activo del espacio.
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public boolean esMiembro(Long espacioId, Long usuarioId) {
+        return miembroEspacioRepository.existsByEspacioIdAndUsuarioId(espacioId, usuarioId);
+    }
+
+    /**
+     * Comprueba de forma booleana si un usuario es administrador de un espacio.
+     *
+     * @param espacioId Identificador del espacio.
+     * @param usuarioId Identificador del usuario.
+     * @return true si es administrador del espacio.
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public boolean esAdmin(Long espacioId, Long usuarioId) {
+        return miembroEspacioRepository.existsByEspacioIdAndUsuarioIdAndRol(espacioId, usuarioId, RolMiembro.ADMIN);
     }
 
     /**

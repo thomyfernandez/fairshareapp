@@ -111,18 +111,21 @@ docker compose up --build
 | :--- | :--- | :--- |
 | `POST` | `/api/v1/espacios` | Crea un nuevo espacio compartido con regla de reparto y presupuesto base |
 | `GET` | `/api/v1/espacios/{id}` | Obtiene el detalle consolidado de un espacio por su identificador |
-| `PUT` | `/api/v1/espacios/{id}` | Actualiza datos del espacio, incluyendo regla de distribucion y presupuesto |
+| `GET` | `/api/v1/espacios/codigo/{codigo}` | Busca y obtiene la configuracion de un espacio a traves de su codigo de invitacion |
+| `PUT` | `/api/v1/espacios/{id}` | Actualiza datos del espacio, incluyendo regla y presupuesto (parametro opcional `solicitanteId` para validar rol ADMIN) |
 | `GET` | `/api/v1/espacios` | Lista todos los espacios compartidos registrados |
-| `PATCH` | `/api/v1/espacios/{id}/regla-distribucion` | Modifica la regla de distribucion (50/50 vs. Proporcional) |
-| `PATCH` | `/api/v1/espacios/{id}/presupuesto-base` | Fija o actualiza el presupuesto base del espacio |
+| `PATCH` | `/api/v1/espacios/{id}/regla-distribucion` | Modifica la regla de distribucion (50/50 vs. Proporcional, parametro opcional `solicitanteId`) |
+| `PATCH` | `/api/v1/espacios/{id}/presupuesto-base` | Fija o actualiza el presupuesto base del espacio (parametro opcional `solicitanteId`) |
+| `DELETE` | `/api/v1/espacios/{id}` | Elimina un espacio compartido del sistema (parametro opcional `solicitanteId` para validar rol ADMIN) |
 
 ### 4. Gestion de Miembros de Espacio
 | Metodo | Endpoint | Descripcion |
 | :--- | :--- | :--- |
-| `POST` | `/api/v1/espacios/{id}/unirse` | Une a un usuario al espacio validando el codigo de invitacion |
+| `POST` | `/api/v1/espacios/{id}/unirse` | Une a un usuario al espacio validando codigo de invitacion. Rechaza membresias duplicadas con HTTP 409 Conflict |
+| `POST` | `/api/v1/espacios/unirse` | Une a un usuario directamente resolviendo el espacio a partir de su codigo de invitacion |
 | `GET` | `/api/v1/espacios/{id}/miembros` | Lista los miembros pertenecientes a un espacio |
 | `PUT` | `/api/v1/espacios/{id}/miembros/{usuarioId}/sueldo` | Registra o actualiza el sueldo mensual declarado del miembro |
-| `PATCH` | `/api/v1/espacios/{id}/miembros/{usuarioId}/rol` | Asigna o modifica el rol del miembro (ADMIN o MIEMBRO) |
+| `PATCH` | `/api/v1/espacios/{id}/miembros/{usuarioId}/rol` | Asigna o modifica el rol del miembro (ADMIN o MIEMBRO, parametro opcional `solicitanteId` para validar rol ADMIN) |
 
 ### 5. Gestion de Sueldos
 Permite registrar y consultar los ingresos mensuales de los usuarios asociados a un periodo especifico (`mes` y `anio`). La regla de division proporcional de gastos (`PROPORCIONAL_INGRESOS`) utiliza automaticamente el sueldo correspondiente al mes y anio en que se realizo el gasto, con retrocompatibilidad al ultimo sueldo registrado o al sueldo base del usuario si no hubiese liquidacion especifica.

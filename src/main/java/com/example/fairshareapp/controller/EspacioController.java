@@ -8,6 +8,7 @@ import com.example.fairshareapp.service.EspacioService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -65,16 +66,32 @@ public class EspacioController {
     }
 
     /**
+     * Busca un espacio compartido a partir de su codigo de invitacion.
+     *
+     * @param codigo Codigo identificador unico del espacio.
+     * @return ResponseEntity con el EspacioResponseDTO y codigo HTTP 200 OK.
+     */
+    @GetMapping("/codigo/{codigo}")
+    public ResponseEntity<EspacioResponseDTO> obtenerEspacioPorCodigo(@PathVariable String codigo) {
+        EspacioResponseDTO response = espacioService.obtenerEspacioPorCodigo(codigo);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
      * Actualiza la informacion de un espacio existente, incluyendo regla de reparto y presupuesto base.
      *
      * @param id Identificador unico del espacio a actualizar.
      * @param updateDTO Datos actualizados del espacio.
+     * @param solicitanteId Identificador opcional del usuario administrador solicitante.
      * @return ResponseEntity con el EspacioResponseDTO actualizado y codigo HTTP 200 OK.
      */
     @PutMapping("/{id}")
     public ResponseEntity<EspacioResponseDTO> actualizarEspacio(@PathVariable Long id,
-                                                                @Valid @RequestBody EspacioUpdateDTO updateDTO) {
-        EspacioResponseDTO response = espacioService.actualizarEspacio(id, updateDTO);
+                                                                @Valid @RequestBody EspacioUpdateDTO updateDTO,
+                                                                @RequestParam(required = false) Long solicitanteId) {
+        EspacioResponseDTO response = (solicitanteId != null)
+                ? espacioService.actualizarEspacio(id, updateDTO, solicitanteId)
+                : espacioService.actualizarEspacio(id, updateDTO);
         return ResponseEntity.ok(response);
     }
 
@@ -94,12 +111,16 @@ public class EspacioController {
      *
      * @param id Identificador unico del espacio.
      * @param reglaReparto Nueva regla de distribucion seleccionada.
+     * @param solicitanteId Identificador opcional del usuario administrador solicitante.
      * @return ResponseEntity con el EspacioResponseDTO modificado.
      */
     @PatchMapping("/{id}/regla-distribucion")
     public ResponseEntity<EspacioResponseDTO> editarReglaDistribucion(@PathVariable Long id,
-                                                                     @RequestParam ReglaReparto reglaReparto) {
-        EspacioResponseDTO response = espacioService.editarReglaDistribucion(id, reglaReparto);
+                                                                      @RequestParam ReglaReparto reglaReparto,
+                                                                      @RequestParam(required = false) Long solicitanteId) {
+        EspacioResponseDTO response = (solicitanteId != null)
+                ? espacioService.editarReglaDistribucion(id, reglaReparto, solicitanteId)
+                : espacioService.editarReglaDistribucion(id, reglaReparto);
         return ResponseEntity.ok(response);
     }
 
@@ -108,12 +129,34 @@ public class EspacioController {
      *
      * @param id Identificador unico del espacio.
      * @param presupuestoBase Monto del presupuesto base a establecer.
+     * @param solicitanteId Identificador opcional del usuario administrador solicitante.
      * @return ResponseEntity con el EspacioResponseDTO modificado.
      */
     @PatchMapping("/{id}/presupuesto-base")
     public ResponseEntity<EspacioResponseDTO> fijarPresupuestoBase(@PathVariable Long id,
-                                                                  @RequestParam BigDecimal presupuestoBase) {
-        EspacioResponseDTO response = espacioService.fijarPresupuestoBase(id, presupuestoBase);
+                                                                  @RequestParam BigDecimal presupuestoBase,
+                                                                  @RequestParam(required = false) Long solicitanteId) {
+        EspacioResponseDTO response = (solicitanteId != null)
+                ? espacioService.fijarPresupuestoBase(id, presupuestoBase, solicitanteId)
+                : espacioService.fijarPresupuestoBase(id, presupuestoBase);
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Elimina un espacio compartido por su identificador unico.
+     *
+     * @param id Identificador unico del espacio a eliminar.
+     * @param solicitanteId Identificador opcional del usuario administrador solicitante.
+     * @return ResponseEntity vacio con codigo HTTP 204 No Content.
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> eliminarEspacio(@PathVariable Long id,
+                                                @RequestParam(required = false) Long solicitanteId) {
+        if (solicitanteId != null) {
+            espacioService.eliminarEspacio(id, solicitanteId);
+        } else {
+            espacioService.eliminarEspacio(id);
+        }
+        return ResponseEntity.noContent().build();
     }
 }

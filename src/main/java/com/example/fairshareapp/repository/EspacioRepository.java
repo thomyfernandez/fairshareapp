@@ -61,5 +61,47 @@ public interface EspacioRepository extends JpaRepository<Espacio, Long> {
      * @return true si existe colision con otro registro.
      */
     boolean existsByCodigoAndIdNot(String codigo, Long id);
+
+    /**
+     * Busca un espacio por su codigo unico ignorando mayusculas y minusculas.
+     *
+     * @param codigo Codigo identificador del espacio.
+     * @return Optional con el espacio si coincide el codigo.
+     */
+    Optional<Espacio> findByCodigoIgnoreCase(String codigo);
+
+    /**
+     * Verifica si ya existe un espacio con el codigo dado ignorando mayusculas y minusculas.
+     *
+     * @param codigo Codigo a verificar.
+     * @return true si ya existe un espacio con ese codigo.
+     */
+    boolean existsByCodigoIgnoreCase(String codigo);
+
+    /**
+     * Verifica si ya existe un espacio con el nombre dado ignorando mayusculas y minusculas.
+     *
+     * @param nombre Nombre a verificar.
+     * @return true si ya existe un espacio con ese nombre.
+     */
+    boolean existsByNombreIgnoreCase(String nombre);
+
+    /**
+     * Verifica si existe otro espacio con el mismo codigo excluyendo un id e ignorando mayusculas/minusculas.
+     *
+     * @param codigo Codigo a verificar.
+     * @param id Identificador a excluir de la comprobacion.
+     * @return true si colisiona con otro espacio.
+     */
+    boolean existsByCodigoIgnoreCaseAndIdNot(String codigo, Long id);
+
+    /**
+     * Verifica si existe otro espacio con el mismo nombre excluyendo un id e ignorando mayusculas/minusculas.
+     *
+     * @param nombre Nombre a verificar.
+     * @param id Identificador a excluir de la comprobacion.
+     * @return true si colisiona con otro espacio.
+     */
+    boolean existsByNombreIgnoreCaseAndIdNot(String nombre, Long id);
 }
 
