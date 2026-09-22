@@ -16,16 +16,14 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 /**
- * DTO para la creacion, consulta y actualizacion de plantillas de gastos recurrentes (favoritos).
+ * DTO de entrada para la creacion de una plantilla de gasto recurrente (favorito).
  */
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class PlantillaGastoDTO {
-
-    private Long id;
+public class PlantillaGastoRequestDTO {
 
     @NotBlank(message = "El nombre de la plantilla es obligatorio")
     @Size(min = 2, max = 100, message = "El nombre debe tener entre 2 y 100 caracteres")
@@ -41,19 +39,21 @@ public class PlantillaGastoDTO {
     @DecimalMin(value = "0.0", inclusive = true, message = "El monto variable no puede ser negativo")
     private BigDecimal montoVariable;
 
+    @NotNull(message = "La fecha de proxima revision del ciclo es obligatoria")
     private LocalDate fechaProximaRevision;
 
+    /**
+     * Identificador del espacio. Es opcional: cuando la solicitud llega junto con el espacioId de la ruta,
+     * el controller exige que ambos coincidan.
+     */
     private Long espacioId;
 
     private Long servicioId;
 
-    private String nombreServicio;
-
+    @NotNull(message = "El identificador del pagador es obligatorio")
     private Long pagadorId;
 
     private Long categoriaId;
 
     private ReglaDivision reglaDivision;
-
-    private Boolean vencido;
 }
