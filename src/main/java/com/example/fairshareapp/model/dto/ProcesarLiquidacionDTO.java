@@ -1,5 +1,7 @@
 package com.example.fairshareapp.model.dto;
 
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,16 +23,19 @@ public class ProcesarLiquidacionDTO {
      * Lista opcional de identificadores de gastos especificos a incluir en la liquidacion.
      * Si no se provee o esta vacia, se agrupan todos los gastos en estado PENDIENTE del espacio.
      */
-    private List<Long> gastoIds;
+    private List gastoIds;
 
     /**
      * Mes del periodo de liquidacion (1 a 12). Si no se provee, se toma el mes actual.
      */
+    @Min(value = 1, message = "El mes debe ser mayor o igual a 1")
+    @Max(value = 12, message = "El mes debe ser menor o igual a 12")
     private Integer mes;
 
     /**
      * Anio del periodo de liquidacion. Si no se provee, se toma el anio actual.
      */
+    @Min(value = 2000, message = "El año debe ser válido (mayor a 2000)")
     private Integer anio;
 
     /**
