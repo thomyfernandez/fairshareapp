@@ -27,14 +27,14 @@ import java.util.Map;
 /**
  * Servicio de negocio para el motor de balances, deudas y liquidacion cruzada.
  * Consolida los gastos registrados en un espacio para determinar cuanto le debe
- * cada usuario a cada otro, simplifica esa informacion en la minima cantidad de
+ * cada usuario a cada otro, simplifica esa informacion en la una cantidad reducida de
  * transacciones posible y permite saldar deudas individualmente.
  */
 @Service
 @Transactional
 public class BalanceService {
 
-    private static final BigDecimal TOLERANCIA = BigDecimal.valueOf(0.01);
+    private static final BigDecimal TOLERANCIA = BigDecimal.ZERO;
 
     private final SaldoDeudaRepository saldoDeudaRepository;
     private final GastoRepository gastoRepository;
@@ -63,13 +63,20 @@ public class BalanceService {
      * @return Balance con la matriz simplificada de deudas pendientes.
      */
     public BalanceDTO obtenerBalance(Long espacioId) {
-        Espacio espacio = espacioRepository.findById(espacioId)
+        Espacio espacio = espacioRepository.findForUpdateById(espacioId)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Espacio no encontrado con id: " + espacioId));
 
         List<Gasto> gastos = gastoRepository.findByEspacioIdOrderByFechaDesc(espacioId);
 
         Map<Long, Usuario> usuariosPorId = new HashMap<>();
         Map<Long, BigDecimal> saldosNetos = calcularSaldosNetos(gastos, usuariosPorId);
+        for (SaldoDeuda d : saldoDeudaRepository.findByEspacioId(espacioId)) {
+            BigDecimal pagado = d.getMontoPagado();
+            usuariosPorId.put(d.getDeudor().getId(), d.getDeudor());
+            usuariosPorId.put(d.getAcreedor().getId(), d.getAcreedor());
+            saldosNetos.merge(d.getDeudor().getId(), pagado, BigDecimal::add);
+            saldosNetos.merge(d.getAcreedor().getId(), pagado.negate(), BigDecimal::add);
+        }
         List<Transaccion> transacciones = simplificarTransacciones(saldosNetos);
 
         List<SaldoDeuda> deudasVigentes = sincronizarSaldoDeuda(espacio, transacciones, usuariosPorId);
@@ -113,6 +120,7 @@ public class BalanceService {
                     ") supera el saldo pendiente de la deuda (" + montoPendiente + ")");
         }
 
+        deuda.setMontoPagado(deuda.getMontoPagado().add(montoPagado));
         BigDecimal nuevoPendiente = montoPendiente.subtract(montoPagado).setScale(2, RoundingMode.HALF_UP);
         if (nuevoPendiente.compareTo(TOLERANCIA) <= 0) {
             deuda.setMonto(BigDecimal.ZERO);
@@ -160,7 +168,7 @@ public class BalanceService {
     }
 
     /**
-     * Simplifica los saldos netos en la minima cantidad de transacciones posible,
+     * Simplifica los saldos netos en la una cantidad reducida de transacciones posible,
      * emparejando en cada paso al deudor y al acreedor con mayor magnitud pendiente.
      *
      * @param saldosNetos Mapa de identificador de usuario a su saldo neto.
@@ -179,8 +187,8 @@ public class BalanceService {
             }
         }
 
-        deudores.sort((a, b) -> b.monto.compareTo(a.monto));
-        acreedores.sort((a, b) -> b.monto.compareTo(a.monto));
+        deudores.sort(java.util.Comparator.comparing((SaldoPersona p) -> p.monto).reversed().thenComparing(p -> p.usuarioId));
+        acreedores.sort(java.util.Comparator.comparing((SaldoPersona p) -> p.monto).reversed().thenComparing(p -> p.usuarioId));
 
         List<Transaccion> transacciones = new ArrayList<>();
         int i = 0;
@@ -232,10 +240,8 @@ public class BalanceService {
             SaldoDeuda existente = pendientesPorPar.remove(clave);
 
             if (existente != null) {
-                BigDecimal delta = transaccion.monto.subtract(existente.getMontoOriginal());
-                BigDecimal nuevoPendiente = existente.getMonto().add(delta).max(BigDecimal.ZERO);
-
-                existente.setMontoOriginal(transaccion.monto);
+                BigDecimal nuevoPendiente = transaccion.monto;
+                existente.setMontoOriginal(transaccion.monto.add(existente.getMontoPagado()));
                 if (nuevoPendiente.compareTo(TOLERANCIA) <= 0) {
                     existente.setMonto(BigDecimal.ZERO);
                     existente.setEstado(EstadoDeuda.SALDADO);

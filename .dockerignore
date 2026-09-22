@@ -1,7 +1,8 @@
 target/
-frontend/node_modules/
-frontend/dist/
+frontend/
 .git/
-.idea/
-.mvn/wrapper/maven-wrapper.jar
-*.md
+.env
+.env.*
+data/
+delivery/
+*.log

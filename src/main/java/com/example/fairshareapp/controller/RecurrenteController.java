@@ -50,6 +50,7 @@ public class RecurrenteController {
      * @return Plantilla creada con codigo HTTP 201 Created.
      */
     @PostMapping("/espacios/{id}/favoritos")
+    @org.springframework.security.access.prepost.PreAuthorize("@acceso.miembro(#id)")
     public ResponseEntity<PlantillaGastoResponseDTO> crearFavorito(@PathVariable Long id,
                                                            @Valid @RequestBody PlantillaGastoRequestDTO dto) {
         if (dto.getEspacioId() != null && !dto.getEspacioId().equals(id)) {
@@ -70,6 +71,7 @@ public class RecurrenteController {
      * @return Lista de plantillas favoritas segun el criterio solicitado.
      */
     @GetMapping("/espacios/{id}/favoritos")
+    @org.springframework.security.access.prepost.PreAuthorize("@acceso.miembro(#id)")
     public ResponseEntity<List<PlantillaGastoResponseDTO>> obtenerFavoritos(
             @PathVariable Long id,
             @RequestParam(required = false, defaultValue = "false") boolean soloVencidos) {
@@ -84,6 +86,7 @@ public class RecurrenteController {
      * @return Lista de servicios y plantillas vencidas que exigen actualizacion de tarifa.
      */
     @GetMapping("/espacios/{id}/favoritos/vencimientos")
+    @org.springframework.security.access.prepost.PreAuthorize("@acceso.miembro(#id)")
     public ResponseEntity<List<ServicioVencimientoDTO>> obtenerVencimientos(@PathVariable Long id) {
         List<ServicioVencimientoDTO> vencidos = recurrentesService.detectarVencimientos(id);
         return ResponseEntity.ok(vencidos);
@@ -96,6 +99,7 @@ public class RecurrenteController {
      * @return Detalle de la plantilla encontrada con codigo HTTP 200 OK.
      */
     @GetMapping("/favoritos/{id}")
+    @org.springframework.security.access.prepost.PreAuthorize("@acceso.plantilla(#id)")
     public ResponseEntity<PlantillaGastoResponseDTO> obtenerFavoritoPorId(@PathVariable Long id) {
         PlantillaGastoResponseDTO dto = recurrentesService.obtenerFavoritoPorId(id);
         return ResponseEntity.ok(dto);
@@ -109,6 +113,7 @@ public class RecurrenteController {
      * @return Detalle del gasto registrado con codigo HTTP 201 Created.
      */
     @PostMapping("/favoritos/{id}/ejecutar")
+    @org.springframework.security.access.prepost.PreAuthorize("@acceso.plantilla(#id)")
     public ResponseEntity<GastoDetalleDTO> ejecutarGasto(@PathVariable Long id) {
         GastoDetalleDTO gastoCreado = recurrentesService.ejecutarGastoDesdePlantilla(id);
         return ResponseEntity.status(HttpStatus.CREATED).body(gastoCreado);
@@ -122,6 +127,7 @@ public class RecurrenteController {
      * @return Plantilla actualizada con codigo HTTP 200 OK.
      */
     @PutMapping("/favoritos/{id}/actualizar-monto")
+    @org.springframework.security.access.prepost.PreAuthorize("@acceso.plantilla(#id)")
     public ResponseEntity<PlantillaGastoResponseDTO> actualizarMonto(@PathVariable Long id,
                                                              @Valid @RequestBody ActualizarPrecioCicloDTO dto) {
         PlantillaGastoResponseDTO actualizada = recurrentesService.actualizarMonto(id, dto);
@@ -135,6 +141,7 @@ public class RecurrenteController {
      * @return Respuesta vacia con codigo HTTP 204 No Content.
      */
     @DeleteMapping("/favoritos/{id}")
+    @org.springframework.security.access.prepost.PreAuthorize("@acceso.plantilla(#id)")
     public ResponseEntity<Void> eliminarFavorito(@PathVariable Long id) {
         recurrentesService.eliminarFavorito(id);
         return ResponseEntity.noContent().build();

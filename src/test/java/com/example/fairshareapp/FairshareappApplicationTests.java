@@ -30,7 +30,7 @@ class FairshareappApplicationTests {
 	@Test
 	@Transactional
 	void nombreUsuario_conservaCompatibilidadConPersistenciaYJson() {
-		Usuario usuario = usuarioRepository.saveAndFlush(Usuario.builder()
+		Usuario usuario = usuarioRepository.saveAndFlush(Usuario.builder().contra("hash-de-prueba")
 				.nombreUsuario("usuario_prueba")
 				.email("usuario_prueba@example.com")
 				.build());

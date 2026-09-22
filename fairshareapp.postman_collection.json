@@ -626,12 +626,13 @@
 							"raw": "{\n  \"usuarioId\": 1,\n  \"monto\": 1200000.00,\n  \"tipo\": \"FIJO\",\n  \"frecuencia\": \"MENSUAL\",\n  \"mes\": 9,\n  \"anio\": 2026\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/api/sueldos",
+							"raw": "{{baseUrl}}/api/v1/sueldos",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"api",
+								"v1",
 								"sueldos"
 							]
 						},
@@ -645,12 +646,13 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/api/sueldos",
+							"raw": "{{baseUrl}}/api/v1/sueldos",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"api",
+								"v1",
 								"sueldos"
 							]
 						},
@@ -673,12 +675,13 @@
 							"raw": "{\n  \"monto\": 1350000.00,\n  \"tipo\": \"FIJO\",\n  \"frecuencia\": \"MENSUAL\",\n  \"mes\": 9,\n  \"anio\": 2026\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/api/sueldos/{{sueldoId}}",
+							"raw": "{{baseUrl}}/api/v1/sueldos/{{sueldoId}}",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"api",
+								"v1",
 								"sueldos",
 								"{{sueldoId}}"
 							]
@@ -693,12 +696,13 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/api/sueldos/{{sueldoId}}",
+							"raw": "{{baseUrl}}/api/v1/sueldos/{{sueldoId}}",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"api",
+								"v1",
 								"sueldos",
 								"{{sueldoId}}"
 							]

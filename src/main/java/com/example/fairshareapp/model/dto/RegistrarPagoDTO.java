@@ -21,6 +21,7 @@ import java.math.BigDecimal;
 public class RegistrarPagoDTO {
 
     @DecimalMin(value = "0.01", message = "El monto del pago debe ser mayor a cero")
+    @jakarta.validation.constraints.Digits(integer=10, fraction=2, message="Máximo 10 enteros y 2 decimales")
     private BigDecimal monto;
 
     private Long liquidacionId;

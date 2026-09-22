@@ -1,7 +1,4 @@
 package com.example.fairshareapp.model.request;
-
-public record LoginRequest(
-        String email,
-        String contra
-) {
-}
+import jakarta.validation.constraints.*;
+public record LoginRequest(@NotBlank @Email @Size(max=254) String email,
+                           @NotBlank @Size(max=72) String contra) {}

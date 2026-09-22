@@ -60,7 +60,7 @@ class UsuarioControllerTest {
      */
     @Test
     void registro_payloadValido_retornaCreated() throws Exception {
-        doNothing().when(usuarioService).registrarUsuario(any(RegistroUsuarioRequest.class));
+        when(usuarioService.registrarUsuario(any(RegistroUsuarioRequest.class))).thenReturn(new UsuarioResponse(1L, "clopez", "carlos@example.com", "Carlos", "Lopez", "USUARIO"));
 
         String json = """
                 {
@@ -76,7 +76,7 @@ class UsuarioControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
                 .andExpect(status().isCreated())
-                .andExpect(content().string("OK"));
+                .andExpect(jsonPath("$.id").value(1)).andExpect(jsonPath("$.contra").doesNotExist());
     }
 
     /**

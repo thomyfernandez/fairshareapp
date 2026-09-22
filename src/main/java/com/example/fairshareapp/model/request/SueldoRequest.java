@@ -19,6 +19,7 @@ public class SueldoRequest {
 
     @NotNull(message = "El monto es obligatorio")
     @DecimalMin(value = "0.0", inclusive = false, message = "El monto debe ser mayor a cero")
+    @jakarta.validation.constraints.Digits(integer=10, fraction=2, message="Máximo 10 enteros y 2 decimales")
     private BigDecimal monto;
 
     @NotNull(message = "El tipo de sueldo es obligatorio")

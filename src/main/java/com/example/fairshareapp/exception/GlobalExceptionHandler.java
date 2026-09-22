@@ -153,8 +153,8 @@ public class GlobalExceptionHandler {
      * @return Respuesta con codigo HTTP 409 Conflict.
      */
     @ExceptionHandler(CicloVencidoException.class)
-    public ResponseEntity<String> handleCicloVencido(CicloVencidoException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
+    public ResponseEntity<ErrorResponseDTO> handleCicloVencido(CicloVencidoException ex, HttpServletRequest request) {
+        return construir(HttpStatus.CONFLICT, "CICLO_VENCIDO", ex.getMessage(), request);
     }
 
     // ==================== Autenticacion (401) ====================
@@ -257,6 +257,24 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponseDTO> handleGenericException(Exception ex, HttpServletRequest request) {
         log.error("Error inesperado no controlado en {}", request.getRequestURI(), ex);
         return construir(HttpStatus.INTERNAL_SERVER_ERROR, "ERROR_INTERNO", "Ocurrio un error inesperado", request);
+    }
+
+
+    @ExceptionHandler(org.springframework.web.method.annotation.HandlerMethodValidationException.class)
+    public ResponseEntity<ErrorResponseDTO> handleMethodValidation(HttpServletRequest request) {
+        return construir(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "La solicitud contiene parámetros inválidos", request);
+    }
+    @ExceptionHandler({org.springframework.web.servlet.resource.NoResourceFoundException.class, org.springframework.web.servlet.NoHandlerFoundException.class})
+    public ResponseEntity<ErrorResponseDTO> handleRutaInexistente(HttpServletRequest request) {
+        return construir(HttpStatus.NOT_FOUND, "RECURSO_NO_ENCONTRADO", "La ruta no existe", request);
+    }
+    @ExceptionHandler(org.springframework.security.core.AuthenticationException.class)
+    public ResponseEntity<ErrorResponseDTO> handleAuthentication(HttpServletRequest request) {
+        return construir(HttpStatus.UNAUTHORIZED, "NO_AUTENTICADO", "Debe iniciar sesión", request);
+    }
+    @ExceptionHandler(org.springframework.dao.OptimisticLockingFailureException.class)
+    public ResponseEntity<ErrorResponseDTO> handleConcurrentChange(HttpServletRequest request) {
+        return construir(HttpStatus.CONFLICT, "CONFLICTO", "El recurso fue modificado. Actualice e intente nuevamente", request);
     }
 
     // ==================== Helpers ====================

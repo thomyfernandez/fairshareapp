@@ -62,7 +62,7 @@ class PlantillaGastoRepositoryTest {
                 .reglaReparto(ReglaReparto.CINCUENTA_CINCUENTA)
                 .build());
 
-        Usuario pagador = usuarioRepository.save(Usuario.builder()
+        Usuario pagador = usuarioRepository.save(Usuario.builder().contra("hash-de-prueba")
                 .nombre("Pagador")
                 .apellido("Test")
                 .email("pagador.vencimientos@example.com")

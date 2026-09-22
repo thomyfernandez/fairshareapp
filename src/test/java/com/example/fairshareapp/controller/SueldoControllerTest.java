@@ -105,7 +105,7 @@ class SueldoControllerTest {
                 }
                 """;
 
-        mockMvc.perform(post("/api/sueldos")
+        mockMvc.perform(post("/api/v1/sueldos")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload))
                 .andExpect(status().isCreated())
@@ -132,7 +132,7 @@ class SueldoControllerTest {
                 }
                 """;
 
-        mockMvc.perform(post("/api/sueldos")
+        mockMvc.perform(post("/api/v1/sueldos")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload))
                 .andExpect(status().isOk())
@@ -153,7 +153,7 @@ class SueldoControllerTest {
                 }
                 """;
 
-        mockMvc.perform(post("/api/sueldos")
+        mockMvc.perform(post("/api/v1/sueldos")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload))
                 .andExpect(status().isBadRequest());
@@ -178,7 +178,7 @@ class SueldoControllerTest {
                 }
                 """;
 
-        mockMvc.perform(post("/api/sueldos")
+        mockMvc.perform(post("/api/v1/sueldos")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload))
                 .andExpect(status().isCreated());
@@ -200,7 +200,7 @@ class SueldoControllerTest {
                 }
                 """;
 
-        mockMvc.perform(post("/api/sueldos")
+        mockMvc.perform(post("/api/v1/sueldos")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload))
                 .andExpect(status().isBadRequest());
@@ -227,7 +227,7 @@ class SueldoControllerTest {
                 }
                 """;
 
-        mockMvc.perform(post("/api/sueldos")
+        mockMvc.perform(post("/api/v1/sueldos")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload))
                 .andExpect(status().isBadRequest());
@@ -250,7 +250,7 @@ class SueldoControllerTest {
                 }
                 """;
 
-        mockMvc.perform(post("/api/sueldos")
+        mockMvc.perform(post("/api/v1/sueldos")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload))
                 .andExpect(status().isNotFound());
@@ -260,7 +260,7 @@ class SueldoControllerTest {
      * Valida que un usuario autenticado no pueda registrar el sueldo de otro usuario.
      */
     @Test
-    void crearSueldo_UsuarioIdDistintoAlAutenticado_RetornaBadRequest() throws Exception {
+    void crearSueldo_UsuarioIdDistintoAlAutenticado_RetornaForbidden() throws Exception {
         autenticarComo(5L);
 
         String payload = """
@@ -272,10 +272,10 @@ class SueldoControllerTest {
                 }
                 """;
 
-        mockMvc.perform(post("/api/sueldos")
+        mockMvc.perform(post("/api/v1/sueldos")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isForbidden());
 
         verify(sueldoService, never()).crearOActualizarSueldo(any(), any());
     }
@@ -287,7 +287,7 @@ class SueldoControllerTest {
     void getAllSueldos_ConUsuarioId_RetornaSoloDelUsuario() throws Exception {
         when(sueldoService.obtenerSueldosPorUsuario(1L)).thenReturn(List.of(sueldoResponse));
 
-        mockMvc.perform(get("/api/sueldos").param("usuarioId", "1"))
+        mockMvc.perform(get("/api/v1/sueldos").param("usuarioId", "1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].usuarioId").value(1L));
@@ -310,7 +310,7 @@ class SueldoControllerTest {
                 }
                 """;
 
-        mockMvc.perform(put("/api/sueldos/10")
+        mockMvc.perform(put("/api/v1/sueldos/10")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload))
                 .andExpect(status().isOk())
@@ -333,7 +333,7 @@ class SueldoControllerTest {
                 }
                 """;
 
-        mockMvc.perform(put("/api/sueldos/999")
+        mockMvc.perform(put("/api/v1/sueldos/999")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload))
                 .andExpect(status().isNotFound());
@@ -343,7 +343,7 @@ class SueldoControllerTest {
      * Valida que un usuario autenticado no pueda actualizar el sueldo de otro usuario.
      */
     @Test
-    void updateSueldo_AccesoNoAutorizado_RetornaBadRequest() throws Exception {
+    void updateSueldo_AccesoNoAutorizado_RetornaForbidden() throws Exception {
         autenticarComo(5L);
         when(sueldoService.obtenerSueldo(10L)).thenReturn(sueldoResponse);
 
@@ -355,10 +355,10 @@ class SueldoControllerTest {
                 }
                 """;
 
-        mockMvc.perform(put("/api/sueldos/10")
+        mockMvc.perform(put("/api/v1/sueldos/10")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isForbidden());
 
         verify(sueldoService, never()).actualizarSueldo(anyLong(), any());
     }
@@ -368,7 +368,7 @@ class SueldoControllerTest {
      */
     @Test
     void deleteSueldo_Existente_RetornaNoContentSinCuerpo() throws Exception {
-        mockMvc.perform(delete("/api/sueldos/10"))
+        mockMvc.perform(delete("/api/v1/sueldos/10"))
                 .andExpect(status().isNoContent())
                 .andExpect(content().string(""));
 
@@ -383,7 +383,7 @@ class SueldoControllerTest {
         org.mockito.Mockito.doThrow(new RecursoNoEncontradoException("Sueldo no encontrado con id: 999"))
                 .when(sueldoService).eliminarSueldo(999L);
 
-        mockMvc.perform(delete("/api/sueldos/999"))
+        mockMvc.perform(delete("/api/v1/sueldos/999"))
                 .andExpect(status().isNotFound());
     }
 }

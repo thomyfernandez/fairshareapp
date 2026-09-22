@@ -262,7 +262,7 @@ class EspacioControllerTest {
                 .presupuestoBase(BigDecimal.valueOf(250000.00))
                 .build();
 
-        when(espacioService.actualizarEspacio(eq(1L), any(EspacioUpdateDTO.class), eq(10L)))
+        when(espacioService.actualizarEspacio(eq(1L), any(EspacioUpdateDTO.class)))
                 .thenReturn(respuestaActualizada);
 
         String jsonUpdate = """
@@ -301,6 +301,6 @@ class EspacioControllerTest {
                         .param("solicitanteId", "5"))
                 .andExpect(status().isNoContent());
 
-        verify(espacioService).eliminarEspacio(1L, 5L);
+        verify(espacioService).eliminarEspacio(1L);
     }
 }

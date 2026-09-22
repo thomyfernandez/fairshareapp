@@ -33,5 +33,6 @@ public class GastoDetalleDTO {
     private Long categoriaId;
     private String categoriaNombre;
     private ReglaDivision regla;
+    private com.example.fairshareapp.model.enums.EstadoGasto estado;
     private List<GastoParticipanteDTO> participantes;
 }

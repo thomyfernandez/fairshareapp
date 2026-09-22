@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/sueldos")
+@RequestMapping("/api/v1/sueldos")
 public class SueldoController {
 
     private final SueldoService sueldoService;
@@ -37,7 +37,9 @@ public class SueldoController {
      * @return ResponseEntity con la lista de SueldoResponse.
      */
     @GetMapping
+    @org.springframework.security.access.prepost.PreAuthorize("#usuarioId == null or @acceso.propio(#usuarioId)")
     public ResponseEntity<List<SueldoResponse>> getAllSueldos(@RequestParam(required = false) Long usuarioId) {
+        if (usuarioId == null && usuarioAutenticado() != null) usuarioId = usuarioAutenticado().getId();
         List<SueldoResponse> sueldos = usuarioId != null
                 ? sueldoService.obtenerSueldosPorUsuario(usuarioId)
                 : sueldoService.obtenerTodos();
@@ -51,6 +53,7 @@ public class SueldoController {
      * @return ResponseEntity con el SueldoResponse encontrado.
      */
     @GetMapping("/{id}")
+    @org.springframework.security.access.prepost.PreAuthorize("@acceso.sueldo(#id)")
     public ResponseEntity<SueldoResponse> getSueldo(@PathVariable Long id) {
         return ResponseEntity.ok(sueldoService.obtenerSueldo(id));
     }
@@ -64,6 +67,7 @@ public class SueldoController {
      * @return ResponseEntity con el SueldoResponse creado o actualizado.
      */
     @PostMapping
+    @org.springframework.security.access.prepost.PreAuthorize("#request.usuarioId == null or @acceso.propio(#request.usuarioId)")
     public ResponseEntity<SueldoResponse> crearSueldo(@Valid @RequestBody SueldoRequest request) {
         Long usuarioId = resolverUsuarioId(request.getUsuarioId());
         SueldoUpsertResult resultado = sueldoService.crearOActualizarSueldo(usuarioId, request);
@@ -80,6 +84,7 @@ public class SueldoController {
      * @return ResponseEntity con el SueldoResponse actualizado.
      */
     @PutMapping("/{id}")
+    @org.springframework.security.access.prepost.PreAuthorize("@acceso.sueldo(#id)")
     public ResponseEntity<SueldoResponse> updateSueldo(@PathVariable Long id, @Valid @RequestBody SueldoRequest request) {
         validarAccesoSueldo(id);
         return ResponseEntity.ok(sueldoService.actualizarSueldo(id, request));
@@ -92,6 +97,7 @@ public class SueldoController {
      * @return ResponseEntity vacio con codigo HTTP 204 No Content.
      */
     @DeleteMapping("/{id}")
+    @org.springframework.security.access.prepost.PreAuthorize("@acceso.sueldo(#id)")
     public ResponseEntity<Void> deleteSueldo(@PathVariable Long id) {
         validarAccesoSueldo(id);
         sueldoService.eliminarSueldo(id);
@@ -111,7 +117,7 @@ public class SueldoController {
 
         if (usuarioIdSolicitado != null) {
             if (autenticado != null && !usuarioIdSolicitado.equals(autenticado.getId())) {
-                throw new ReglaInvalidaException("Acceso denegado: no puede registrar el sueldo de otro usuario");
+                throw new com.example.fairshareapp.exception.AccesoDenegadoException("Acceso denegado: no puede registrar el sueldo de otro usuario");
             }
             return usuarioIdSolicitado;
         }
@@ -135,7 +141,7 @@ public class SueldoController {
         }
         SueldoResponse existente = sueldoService.obtenerSueldo(sueldoId);
         if (existente.getUsuarioId() != null && !existente.getUsuarioId().equals(autenticado.getId())) {
-            throw new ReglaInvalidaException("Acceso denegado: el sueldo pertenece a otro usuario");
+            throw new com.example.fairshareapp.exception.AccesoDenegadoException("Acceso denegado: el sueldo pertenece a otro usuario");
         }
     }
 

@@ -110,7 +110,7 @@ class BalanceServiceTest {
     void obtenerBalance_gastoEquitativoEntreDos_generaDeudaSimplificada() {
         Gasto gasto = crearGastoEquitativo(juan, 1000.0, juan, maria);
 
-        when(espacioRepository.findById(1L)).thenReturn(Optional.of(espacio));
+        when(espacioRepository.findForUpdateById(1L)).thenReturn(Optional.of(espacio));
         when(gastoRepository.findByEspacioIdOrderByFechaDesc(1L)).thenReturn(List.of(gasto));
         when(saldoDeudaRepository.findByEspacioIdAndEstado(1L, EstadoDeuda.PENDIENTE)).thenReturn(List.of());
 
@@ -132,7 +132,7 @@ class BalanceServiceTest {
         Gasto gastoJuan = crearGastoEquitativo(juan, 900.0, juan, maria, pedro);
         Gasto gastoMaria = crearGastoEquitativo(maria, 300.0, juan, maria, pedro);
 
-        when(espacioRepository.findById(1L)).thenReturn(Optional.of(espacio));
+        when(espacioRepository.findForUpdateById(1L)).thenReturn(Optional.of(espacio));
         when(gastoRepository.findByEspacioIdOrderByFechaDesc(1L)).thenReturn(List.of(gastoJuan, gastoMaria));
         when(saldoDeudaRepository.findByEspacioIdAndEstado(1L, EstadoDeuda.PENDIENTE)).thenReturn(List.of());
 
@@ -148,7 +148,7 @@ class BalanceServiceTest {
 
     @Test
     void obtenerBalance_espacioInexistente_lanzaExcepcion() {
-        when(espacioRepository.findById(99L)).thenReturn(Optional.empty());
+        when(espacioRepository.findForUpdateById(99L)).thenReturn(Optional.empty());
 
         assertThrows(RecursoNoEncontradoException.class, () -> balanceService.obtenerBalance(99L));
     }

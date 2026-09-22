@@ -58,6 +58,9 @@ class GastoServiceTest {
     @Mock
     private SueldoRepository sueldoRepository;
 
+    @Mock
+    private com.example.fairshareapp.repository.MiembroEspacioRepository miembroEspacioRepository;
+
     @InjectMocks
     private GastoService gastoService;
 
@@ -72,6 +75,7 @@ class GastoServiceTest {
      */
     @BeforeEach
     void setUp() {
+        org.mockito.Mockito.lenient().when(miembroEspacioRepository.existsByEspacioIdAndUsuarioId(org.mockito.ArgumentMatchers.anyLong(), org.mockito.ArgumentMatchers.anyLong())).thenReturn(true);
         espacio = Espacio.builder().id(1L).nombre("Departamento Centro").build();
 
         usuario1 = Usuario.builder()

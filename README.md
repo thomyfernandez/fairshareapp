@@ -134,11 +134,10 @@ No existe un usuario por defecto: si el body no incluye `usuarioId`, se utiliza 
 
 | Metodo | Endpoint | Descripcion |
 | :--- | :--- | :--- |
-| `POST` | `/api/sueldos` | Crea o actualiza (upsert) el sueldo de un usuario para un periodo (`mes` y `anio`) y sincroniza su perfil. Devuelve 201 si crea un registro nuevo, o 200 si actualiza uno existente |
-| `GET` | `/api/sueldos` | Lista todos los sueldos registrados en el sistema (filtro opcional por query param `usuarioId`) |
-| `GET` | `/api/sueldos/{id}` | Obtiene el detalle de un sueldo por su id |
-| `PUT` | `/api/sueldos/{id}` | Actualiza monto, tipo, frecuencia, mes o anio de un sueldo existente (el usuario propietario no se puede reasignar) |
-| `DELETE` | `/api/sueldos/{id}` | Elimina un registro de sueldo (204 sin cuerpo) |
+| `POST` | `/api/v1/sueldos` | Registra o actualiza (upsert) el sueldo de un usuario para un periodo (`mes` y `anio`) y sincroniza su perfil |
+| `GET` | `/api/v1/sueldos` | Lista todos los sueldos registrados en el sistema (filtro opcional por query param `usuarioId`) |
+| `PUT` | `/api/v1/sueldos/{id}` | Actualiza monto, periodicidad, tipo de sueldo, mes o anio |
+| `DELETE` | `/api/v1/sueldos/{id}` | Elimina un registro de sueldo |
 
 ### 6. Gestion de Gastos
 | Metodo | Endpoint | Descripcion |

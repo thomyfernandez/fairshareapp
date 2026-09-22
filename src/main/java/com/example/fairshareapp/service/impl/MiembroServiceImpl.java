@@ -153,6 +153,9 @@ public class MiembroServiceImpl implements MiembroService {
             validarPermisoAdmin(espacioId, solicitanteId);
         }
         MiembroEspacio miembro = obtenerMembresia(espacioId, usuarioId);
+        if (miembro.getRol() == RolMiembro.ADMIN && rol != RolMiembro.ADMIN
+                && miembroEspacioRepository.findByEspacioId(espacioId).stream().filter(m -> m.getRol() == RolMiembro.ADMIN).count() <= 1)
+            throw new com.example.fairshareapp.exception.ConflictoException("No se puede quitar el último administrador");
         miembro.setRol(rol);
         MiembroEspacio guardado = miembroEspacioRepository.save(miembro);
         return mapToResponseDTO(guardado);

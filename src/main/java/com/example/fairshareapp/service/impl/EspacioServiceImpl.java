@@ -103,6 +103,12 @@ public class EspacioServiceImpl implements EspacioService {
                 .build();
 
         Espacio guardado = espacioRepository.save(espacio);
+        var creador = com.example.fairshareapp.security.UsuarioActual.obtener();
+        if (creador != null) {
+            miembroEspacioRepository.save(com.example.fairshareapp.model.entity.MiembroEspacio.builder()
+                .espacio(guardado).usuario(creador).rol(RolMiembro.ADMIN).build());
+        }
+
         return mapToResponseDTO(guardado);
     }
 
@@ -285,7 +291,10 @@ public class EspacioServiceImpl implements EspacioService {
     @Override
     @Transactional(readOnly = true)
     public List<EspacioResponseDTO> listarEspacios() {
-        return espacioRepository.findAll().stream()
+        var actual = com.example.fairshareapp.security.UsuarioActual.obtener();
+        var espacios = actual == null ? espacioRepository.findAll() : miembroEspacioRepository.findByUsuarioId(actual.getId())
+                .stream().map(com.example.fairshareapp.model.entity.MiembroEspacio::getEspacio).toList();
+        return espacios.stream()
                 .map(this::mapToResponseDTO)
                 .toList();
     }

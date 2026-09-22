@@ -82,6 +82,7 @@ class RecurrentesServiceTest {
      */
     @BeforeEach
     void setUp() {
+        org.mockito.Mockito.lenient().when(miembroEspacioRepository.existsByEspacioIdAndUsuarioId(org.mockito.ArgumentMatchers.anyLong(), org.mockito.ArgumentMatchers.anyLong())).thenReturn(true);
         usuario = Usuario.builder()
                 .id(1L)
                 .nombre("Thomas")

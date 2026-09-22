@@ -60,6 +60,7 @@ public class EspacioController {
      * @return ResponseEntity con el EspacioResponseDTO y codigo HTTP 200 OK.
      */
     @GetMapping("/{id}")
+    @org.springframework.security.access.prepost.PreAuthorize("@acceso.miembro(#id)")
     public ResponseEntity<EspacioResponseDTO> obtenerEspacioPorId(@PathVariable Long id) {
         EspacioResponseDTO response = espacioService.obtenerEspacioPorId(id);
         return ResponseEntity.ok(response);
@@ -82,16 +83,15 @@ public class EspacioController {
      *
      * @param id Identificador unico del espacio a actualizar.
      * @param updateDTO Datos actualizados del espacio.
-     * @param solicitanteId Identificador opcional del usuario administrador solicitante.
+     * @param solicitanteId Parametro heredado; los permisos se verifican con el JWT.
      * @return ResponseEntity con el EspacioResponseDTO actualizado y codigo HTTP 200 OK.
      */
     @PutMapping("/{id}")
+    @org.springframework.security.access.prepost.PreAuthorize("@acceso.admin(#id)")
     public ResponseEntity<EspacioResponseDTO> actualizarEspacio(@PathVariable Long id,
                                                                 @Valid @RequestBody EspacioUpdateDTO updateDTO,
                                                                 @RequestParam(required = false) Long solicitanteId) {
-        EspacioResponseDTO response = (solicitanteId != null)
-                ? espacioService.actualizarEspacio(id, updateDTO, solicitanteId)
-                : espacioService.actualizarEspacio(id, updateDTO);
+        EspacioResponseDTO response = espacioService.actualizarEspacio(id, updateDTO);
         return ResponseEntity.ok(response);
     }
 
@@ -111,16 +111,15 @@ public class EspacioController {
      *
      * @param id Identificador unico del espacio.
      * @param reglaReparto Nueva regla de distribucion seleccionada.
-     * @param solicitanteId Identificador opcional del usuario administrador solicitante.
+     * @param solicitanteId Parametro heredado; los permisos se verifican con el JWT.
      * @return ResponseEntity con el EspacioResponseDTO modificado.
      */
     @PatchMapping("/{id}/regla-distribucion")
+    @org.springframework.security.access.prepost.PreAuthorize("@acceso.admin(#id)")
     public ResponseEntity<EspacioResponseDTO> editarReglaDistribucion(@PathVariable Long id,
                                                                       @RequestParam ReglaReparto reglaReparto,
                                                                       @RequestParam(required = false) Long solicitanteId) {
-        EspacioResponseDTO response = (solicitanteId != null)
-                ? espacioService.editarReglaDistribucion(id, reglaReparto, solicitanteId)
-                : espacioService.editarReglaDistribucion(id, reglaReparto);
+        EspacioResponseDTO response = espacioService.editarReglaDistribucion(id, reglaReparto);
         return ResponseEntity.ok(response);
     }
 
@@ -129,16 +128,15 @@ public class EspacioController {
      *
      * @param id Identificador unico del espacio.
      * @param presupuestoBase Monto del presupuesto base a establecer.
-     * @param solicitanteId Identificador opcional del usuario administrador solicitante.
+     * @param solicitanteId Parametro heredado; los permisos se verifican con el JWT.
      * @return ResponseEntity con el EspacioResponseDTO modificado.
      */
     @PatchMapping("/{id}/presupuesto-base")
+    @org.springframework.security.access.prepost.PreAuthorize("@acceso.admin(#id)")
     public ResponseEntity<EspacioResponseDTO> fijarPresupuestoBase(@PathVariable Long id,
                                                                   @RequestParam BigDecimal presupuestoBase,
                                                                   @RequestParam(required = false) Long solicitanteId) {
-        EspacioResponseDTO response = (solicitanteId != null)
-                ? espacioService.fijarPresupuestoBase(id, presupuestoBase, solicitanteId)
-                : espacioService.fijarPresupuestoBase(id, presupuestoBase);
+        EspacioResponseDTO response = espacioService.fijarPresupuestoBase(id, presupuestoBase);
         return ResponseEntity.ok(response);
     }
 
@@ -146,17 +144,14 @@ public class EspacioController {
      * Elimina un espacio compartido por su identificador unico.
      *
      * @param id Identificador unico del espacio a eliminar.
-     * @param solicitanteId Identificador opcional del usuario administrador solicitante.
+     * @param solicitanteId Parametro heredado; los permisos se verifican con el JWT.
      * @return ResponseEntity vacio con codigo HTTP 204 No Content.
      */
     @DeleteMapping("/{id}")
+    @org.springframework.security.access.prepost.PreAuthorize("@acceso.admin(#id)")
     public ResponseEntity<Void> eliminarEspacio(@PathVariable Long id,
                                                 @RequestParam(required = false) Long solicitanteId) {
-        if (solicitanteId != null) {
-            espacioService.eliminarEspacio(id, solicitanteId);
-        } else {
-            espacioService.eliminarEspacio(id);
-        }
+        espacioService.eliminarEspacio(id);
         return ResponseEntity.noContent().build();
     }
 }

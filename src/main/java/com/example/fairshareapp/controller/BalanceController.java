@@ -39,6 +39,7 @@ public class BalanceController {
      * @return Balance del espacio con codigo HTTP 200 OK.
      */
     @GetMapping("/espacios/{id}/balance")
+    @org.springframework.security.access.prepost.PreAuthorize("@acceso.miembro(#id)")
     public ResponseEntity<BalanceDTO> obtenerBalance(@PathVariable Long id) {
         BalanceDTO balance = balanceService.obtenerBalance(id);
         return ResponseEntity.ok(balance);
@@ -52,6 +53,7 @@ public class BalanceController {
      * @return Detalle actualizado de la deuda con codigo HTTP 200 OK.
      */
     @PostMapping("/deudas/{id}/saldar")
+    @org.springframework.security.access.prepost.PreAuthorize("@acceso.pago(#id)")
     public ResponseEntity<DeudaDetalleDTO> saldarDeuda(@PathVariable Long id,
                                                         @Valid @RequestBody(required = false) RegistrarPagoDTO dto) {
         DeudaDetalleDTO deuda = balanceService.registrarPago(id, dto);
