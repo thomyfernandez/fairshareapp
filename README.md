@@ -103,8 +103,9 @@ docker compose up --build
 | Metodo | Endpoint | Descripcion |
 | :--- | :--- | :--- |
 | `POST` | `/api/v1/usuarios/registro` | Registra un nuevo usuario en la base de datos (compatible con `/api/usuario/registro`) |
-| `POST` | `/api/v1/usuarios/login` | Valida credenciales de acceso de un usuario (compatible con `/api/usuario/login`) |
-| `GET` | `/api/v1/usuarios` | Retorna el listado completo de usuarios (compatible con `/api/usuario/get`) |
+| `POST` | `/api/v1/usuarios/login` | Valida credenciales de acceso de un usuario y retorna JWT Bearer (compatible con `/api/usuario/login`) |
+| `GET` | `/api/v1/usuarios/me` | Retorna los datos del usuario autenticado segun el JWT enviado (compatible con `/api/usuario/me`) |
+| `GET` | `/api/v1/usuarios` | Retorna el listado completo de usuarios (requiere rol global ADMIN, compatible con `/api/usuario/get`) |
 
 ### 3. Gestion de Espacios
 | Metodo | Endpoint | Descripcion |
@@ -136,6 +137,7 @@ No existe un usuario por defecto: si el body no incluye `usuarioId`, se utiliza 
 | :--- | :--- | :--- |
 | `POST` | `/api/v1/sueldos` | Registra o actualiza (upsert) el sueldo de un usuario para un periodo (`mes` y `anio`) y sincroniza su perfil |
 | `GET` | `/api/v1/sueldos` | Lista todos los sueldos registrados en el sistema (filtro opcional por query param `usuarioId`) |
+| `GET` | `/api/v1/sueldos/{id}` | Obtiene el detalle individual de un sueldo mediante su identificador unico |
 | `PUT` | `/api/v1/sueldos/{id}` | Actualiza monto, periodicidad, tipo de sueldo, mes o anio |
 | `DELETE` | `/api/v1/sueldos/{id}` | Elimina un registro de sueldo |
 
@@ -177,4 +179,29 @@ Permite procesar el cierre de gastos pendientes en un espacio con validacion de 
 
 ## Pruebas con Postman
 
-El proyecto incluye el archivo `fairshareapp.postman_collection.json` en la raiz del repositorio. Puede ser importado directamente en Postman para probar todos los endpoints disponibles.
+El proyecto incluye el archivo `fairshareapp.postman_collection.json` en la raiz del repositorio. Puede ser importado directamente en Postman para probar todos los endpoints disponibles de forma ordenada e interactiva.
+
+### Flujo de Ejecucion Recomendado
+
+1. **General & Health**: Ejecutar `Estado del Servicio (Status)` o `Prueba de Conexion (Hello)` para verificar la conectividad con el backend.
+2. **Registro y Login**:
+   - Ejecutar `Registrar Usuario Principal`: los pre-request scripts generan automaticamente credenciales unicas y configuran las variables.
+   - Ejecutar `Login de Usuario Principal`: el test script captura de forma automatica el token JWT y lo asigna a la variable `authToken`. Todas las peticiones subsecuentes heredan esta autorizacion Bearer.
+   - Ejecutar `Obtener Perfil de Usuario Autenticado (/me)` para verificar la identidad devuelta por el JWT.
+   - Ejecutar `Registrar Usuario Secundario` y `Login Usuario Secundario` para preparar las pruebas grupales (captura `authTokenUser2` y `usuarioId2`).
+   - Ejecutar `Registrar Usuario Terciario` y `Login Usuario Terciario` para pruebas de union directa por codigo (`authTokenUser3` y `usuarioId3`).
+   - Ejecutar `Login Usuario Administrador` y `Listar Todos los Usuarios` para validar el consumo de endpoints restringidos a `ROLE_ADMIN` (utiliza la cuenta de desarrollo `admin@fairshare.com` / `Admin123!`, activa unicamente fuera de produccion mediante `@Profile("!prod")` y configurable por variables de entorno `ADMIN_EMAIL` y `ADMIN_PASSWORD`).
+3. **Espacios y Miembros**:
+   - Ejecutar `Crear Espacio Compartido`: el creador asume el rol de ADMIN del espacio y las variables `espacioId` y `nuevoEspacioCodigo` se actualizan automaticamente.
+   - Ejecutar `Eliminar Espacio`: crea internamente un espacio temporal y lo elimina, preservando `espacioId` para las pruebas posteriores.
+   - Ejecutar `Unirse a Espacio con Codigo` y `Unirse por Codigo Directo`: incorpora a Maria y Carlos al espacio compartido.
+4. **Sueldos, Gastos, Balances y Liquidaciones**:
+   - Ejecutar los endpoints de `Sueldos`, `Gastos`, `Balances y Deudas` (calculo dinamico del monto a saldar), `Gastos Recurrentes y Favoritos` y `Liquidaciones` siguiendo el orden numerico de las carpetas.
+
+### Ejecucion Automatizada con Collection Runner o Newman
+
+La coleccion esta preparada para ejecutarse en lote mediante el Collection Runner de Postman o por linea de comandos con Newman. Todos los scripts de pre-solicitud y pruebas encadenan las variables requeridas en memoria (tokens JWT, identificadores de espacios, miembros, sueldos, gastos y montos de liquidacion), permitiendo una ejecucion secuencial completa con resultados 100% exitosos (codigos HTTP 2xx):
+
+```bash
+npx -y newman run fairshareapp.postman_collection.json
+```

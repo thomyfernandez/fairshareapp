@@ -322,6 +322,12 @@ public class EspacioServiceImpl implements EspacioService {
         if (!espacioRepository.existsById(id)) {
             throw new RecursoNoEncontradoException(ESPACIO_NO_ENCONTRADO + id);
         }
+        if (miembroEspacioRepository != null) {
+            var ms = miembroEspacioRepository.findByEspacioId(id);
+            if (ms != null && !ms.isEmpty()) {
+                miembroEspacioRepository.deleteAll(ms);
+            }
+        }
         espacioRepository.deleteById(id);
     }
 

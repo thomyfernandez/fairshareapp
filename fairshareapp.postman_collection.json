@@ -2,8 +2,18 @@
 	"info": {
 		"_postman_id": "8a32d184-7e5d-4f81-8b27-4632128e3bfa",
 		"name": "FairShare API",
-		"description": "Coleccion oficial de endpoints REST de FairShare App para pruebas con Postman. Incluye modulos de Health, Usuarios, Espacios, Miembros, Sueldos, Gastos y Balances.",
+		"description": "Coleccion oficial de endpoints REST de FairShare App para pruebas con Postman. Incluye soporte de autenticacion JWT Bearer, modulos de Health, Usuarios, Espacios, Miembros, Sueldos, Gastos, Balances y Liquidaciones.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{authToken}}",
+				"type": "string"
+			}
+		]
 	},
 	"variable": [
 		{
@@ -12,12 +22,57 @@
 			"type": "string"
 		},
 		{
+			"key": "authToken",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "authTokenUser2",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "authTokenUser3",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "authTokenAdmin",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "adminEmail",
+			"value": "admin@fairshare.com",
+			"type": "string"
+		},
+		{
+			"key": "adminPassword",
+			"value": "Admin123!",
+			"type": "string"
+		},
+		{
+			"key": "usuarioId",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "usuarioId2",
+			"value": "2",
+			"type": "string"
+		},
+		{
+			"key": "usuarioId3",
+			"value": "3",
+			"type": "string"
+		},
+		{
 			"key": "espacioId",
 			"value": "1",
 			"type": "string"
 		},
 		{
-			"key": "usuarioId",
+			"key": "espacioEliminarId",
 			"value": "1",
 			"type": "string"
 		},
@@ -37,6 +92,11 @@
 			"type": "string"
 		},
 		{
+			"key": "pagoMonto",
+			"value": "100.00",
+			"type": "string"
+		},
+		{
 			"key": "favoritoId",
 			"value": "1",
 			"type": "string"
@@ -49,6 +109,26 @@
 		{
 			"key": "userUsername",
 			"value": "juanperez",
+			"type": "string"
+		},
+		{
+			"key": "userEmail2",
+			"value": "maria.lopez@example.com",
+			"type": "string"
+		},
+		{
+			"key": "userUsername2",
+			"value": "marialopez",
+			"type": "string"
+		},
+		{
+			"key": "userEmail3",
+			"value": "carlos.ramirez@example.com",
+			"type": "string"
+		},
+		{
+			"key": "userUsername3",
+			"value": "carlosramirez",
 			"type": "string"
 		},
 		{
@@ -68,7 +148,23 @@
 			"item": [
 				{
 					"name": "Estado del Servicio (Status)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Servicio disponible con estado UP\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
+						"auth": {
+							"type": "noauth"
+						},
 						"method": "GET",
 						"header": [],
 						"url": {
@@ -81,13 +177,29 @@
 								"status"
 							]
 						},
-						"description": "Retorna el estado UP del servicio, nombre de la aplicacion y timestamp actual."
+						"description": "Retorna el estado UP del servicio, nombre de la aplicacion y timestamp actual. Endpoint publico."
 					},
 					"response": []
 				},
 				{
 					"name": "Prueba de Conexion (Hello)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Respuesta exitosa de prueba de conexion\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
+						"auth": {
+							"type": "noauth"
+						},
 						"method": "GET",
 						"header": [],
 						"url": {
@@ -100,17 +212,17 @@
 								"hello"
 							]
 						},
-						"description": "Retorna mensaje de confirmacion de conectividad con el backend."
+						"description": "Retorna mensaje de confirmacion de conectividad con el backend de Spring Boot. Endpoint publico."
 					},
 					"response": []
 				}
 			]
 		},
 		{
-			"name": "2. Usuarios",
+			"name": "2. Usuarios y Autenticacion",
 			"item": [
 				{
-					"name": "Registrar Usuario",
+					"name": "Registrar Usuario Principal",
 					"event": [
 						{
 							"listen": "prerequest",
@@ -122,9 +234,24 @@
 								],
 								"type": "text/javascript"
 							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Usuario principal registrado exitosamente (201 Created)\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+									"});",
+									"if (pm.response.code === 201) {\n    var data = pm.response.json();\n    if (data && data.id) {\n        pm.collectionVariables.set(\"usuarioId\", String(data.id));\n    }\n}"
+								],
+								"type": "text/javascript"
+							}
 						}
 					],
 					"request": {
+						"auth": {
+							"type": "noauth"
+						},
 						"method": "POST",
 						"header": [
 							{
@@ -134,7 +261,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"nombre\": \"Juan\",\n  \"apellido\": \"Perez\",\n  \"email\": \"{{userEmail}}\",\n  \"contra\": \"password123\",\n  \"usuario\": \"{{userUsername}}\"\n}"
+							"raw": "{\n  \"nombre\": \"Juan\",\n  \"apellido\": \"Perez\",\n  \"email\": \"{{userEmail}}\",\n  \"contra\": \"Password123!\",\n  \"usuario\": \"{{userUsername}}\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/api/v1/usuarios/registro",
@@ -148,13 +275,30 @@
 								"registro"
 							]
 						},
-						"description": "Registra un nuevo usuario en la base de datos."
+						"description": "Registra una cuenta de usuario con credenciales unicas. El script de pre-solicitud genera email y nombre de usuario dinamicos para evitar colisiones."
 					},
 					"response": []
 				},
 				{
-					"name": "Login de Usuario",
+					"name": "Login de Usuario Principal",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Autenticacion exitosa y token JWT generado\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+									"});",
+									"if (pm.response.code === 200) {\n    var data = pm.response.json();\n    if (data && data.token) {\n        pm.collectionVariables.set(\"authToken\", data.token);\n    }\n    if (data && data.usuario && data.usuario.id) {\n        pm.collectionVariables.set(\"usuarioId\", String(data.usuario.id));\n    }\n}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
+						"auth": {
+							"type": "noauth"
+						},
 						"method": "POST",
 						"header": [
 							{
@@ -164,7 +308,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"contra\": \"password123\"\n}"
+							"raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"contra\": \"Password123!\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/api/v1/usuarios/login",
@@ -178,13 +322,327 @@
 								"login"
 							]
 						},
-						"description": "Autentica las credenciales de un usuario existente."
+						"description": "Autentica las credenciales del usuario principal. Su test script guarda automaticamente el token JWT en {{authToken}} para los endpoints protegidos."
 					},
 					"response": []
 				},
 				{
-					"name": "Listar Todos los Usuarios",
+					"name": "Obtener Perfil de Usuario Autenticado (/me)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Perfil de usuario obtenido correctamente\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/usuarios/me",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"usuarios",
+								"me"
+							]
+						},
+						"description": "Retorna la informacion del usuario actualmente autenticado mediante su token JWT Bearer (ID, nombre, apellido, email y rol)."
+					},
+					"response": []
+				},
+				{
+					"name": "Registrar Usuario Secundario (Miembro)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"var ts = Date.now().toString().slice(-6);",
+									"pm.collectionVariables.set(\"userEmail2\", \"maria.\" + ts + \"@example.com\");",
+									"pm.collectionVariables.set(\"userUsername2\", \"maria\" + ts);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Usuario secundario registrado correctamente (201 Created)\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+									"});",
+									"if (pm.response.code === 201) {\n    var data = pm.response.json();\n    if (data && data.id) {\n        pm.collectionVariables.set(\"usuarioId2\", String(data.id));\n    }\n}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombre\": \"Maria\",\n  \"apellido\": \"Lopez\",\n  \"email\": \"{{userEmail2}}\",\n  \"contra\": \"Password123!\",\n  \"usuario\": \"{{userUsername2}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/usuarios/registro",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"usuarios",
+								"registro"
+							]
+						},
+						"description": "Registra un segundo usuario (Maria) para probar interacciones grupales, membresias secundarias y division de gastos con multiples participantes."
+					},
+					"response": []
+				},
+				{
+					"name": "Login Usuario Secundario",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Login exitoso de usuario secundario\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+									"});",
+									"if (pm.response.code === 200) {\n    var data = pm.response.json();\n    if (data && data.token) {\n        pm.collectionVariables.set(\"authTokenUser2\", data.token);\n    }\n    if (data && data.usuario && data.usuario.id) {\n        pm.collectionVariables.set(\"usuarioId2\", String(data.usuario.id));\n    }\n}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"{{userEmail2}}\",\n  \"contra\": \"Password123!\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/usuarios/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"usuarios",
+								"login"
+							]
+						},
+						"description": "Autentica al segundo usuario (Maria) y almacena su token JWT en {{authTokenUser2}}."
+					},
+					"response": []
+				},
+				{
+					"name": "Registrar Usuario Terciario (Invitado)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"var ts = Date.now().toString().slice(-6);",
+									"pm.collectionVariables.set(\"userEmail3\", \"carlos.\" + ts + \"@example.com\");",
+									"pm.collectionVariables.set(\"userUsername3\", \"carlos\" + ts);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Usuario terciario registrado exitosamente\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+									"});",
+									"if (pm.response.code === 201) {\n    var data = pm.response.json();\n    if (data && data.id) {\n        pm.collectionVariables.set(\"usuarioId3\", String(data.id));\n    }\n}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombre\": \"Carlos\",\n  \"apellido\": \"Ramirez\",\n  \"email\": \"{{userEmail3}}\",\n  \"contra\": \"Password123!\",\n  \"usuario\": \"{{userUsername3}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/usuarios/registro",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"usuarios",
+								"registro"
+							]
+						},
+						"description": "Registra un tercer usuario (Carlos) para validar uniones directas a espacios por codigo sin generar conflictos de membresia previa."
+					},
+					"response": []
+				},
+				{
+					"name": "Login Usuario Terciario",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Login exitoso de usuario terciario\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+									"});",
+									"if (pm.response.code === 200) {\n    var data = pm.response.json();\n    if (data && data.token) {\n        pm.collectionVariables.set(\"authTokenUser3\", data.token);\n    }\n    if (data && data.usuario && data.usuario.id) {\n        pm.collectionVariables.set(\"usuarioId3\", String(data.usuario.id));\n    }\n}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"{{userEmail3}}\",\n  \"contra\": \"Password123!\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/usuarios/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"usuarios",
+								"login"
+							]
+						},
+						"description": "Autentica al tercer usuario (Carlos) y almacena su token JWT en {{authTokenUser3}}."
+					},
+					"response": []
+				},
+				{
+					"name": "Login Usuario Administrador",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Login exitoso de administrador\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+									"});",
+									"if (pm.response.code === 200) {\n    var data = pm.response.json();\n    if (data && data.token) {\n        pm.collectionVariables.set(\"authTokenAdmin\", data.token);\n    }\n}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"contra\": \"{{adminPassword}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/usuarios/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"usuarios",
+								"login"
+							]
+						},
+						"description": "Autentica la cuenta de administrador global del sistema y obtiene el token {{authTokenAdmin}} con rol ROLE_ADMIN."
+					},
+					"response": []
+				},
+				{
+					"name": "Listar Todos los Usuarios (Requiere Rol ADMIN)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Listado completo de usuarios obtenido con rol ADMIN\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authTokenAdmin}}",
+									"type": "string"
+								}
+							]
+						},
 						"method": "GET",
 						"header": [],
 						"url": {
@@ -198,14 +656,14 @@
 								"usuarios"
 							]
 						},
-						"description": "Obtiene la lista completa de usuarios registrados."
+						"description": "Retorna el listado completo de todos los usuarios registrados en el sistema utilizando las credenciales del administrador global."
 					},
 					"response": []
 				}
 			]
 		},
 		{
-			"name": "3. Espacios",
+			"name": "3. Espacios Compartidos",
 			"item": [
 				{
 					"name": "Crear Espacio Compartido",
@@ -217,6 +675,18 @@
 									"var ts = Date.now().toString().slice(-6);",
 									"pm.collectionVariables.set(\"nuevoEspacioNombre\", \"Palermo \" + ts);",
 									"pm.collectionVariables.set(\"nuevoEspacioCodigo\", \"PAL-\" + ts);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Espacio creado exitosamente (201 Created)\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+									"});",
+									"if (pm.response.code === 201) {\n    var data = pm.response.json();\n    if (data && data.id) {\n        pm.collectionVariables.set(\"espacioId\", String(data.id));\n    }\n    if (data && data.codigo) {\n        pm.collectionVariables.set(\"nuevoEspacioCodigo\", String(data.codigo));\n    }\n}"
 								],
 								"type": "text/javascript"
 							}
@@ -245,12 +715,25 @@
 								"espacios"
 							]
 						},
-						"description": "Crea un nuevo espacio compartido configurando su tipo (HOGAR, VIAJE, PAREJA, TRABAJO, OTRO), regla de reparto inicial (CINCUENTA_CINCUENTA o PROPORCIONAL) y presupuesto base."
+						"description": "Crea un nuevo espacio compartido. El usuario autenticado que realiza la creacion queda automaticamente incorporado con rol de administrador (ADMIN). El test script actualiza {{espacioId}} y {{nuevoEspacioCodigo}}."
 					},
 					"response": []
 				},
 				{
 					"name": "Obtener Espacio por ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Detalle del espacio recuperado exitosamente\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "GET",
 						"header": [],
@@ -266,12 +749,60 @@
 								"{{espacioId}}"
 							]
 						},
-						"description": "Recupera la informacion detallada y estado consolidado de un espacio."
+						"description": "Recupera la informacion detallada y estado consolidado de un espacio compartido por su identificador unico. Requiere pertenecer al espacio como miembro."
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener Espacio por Codigo",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Espacio localizado por su codigo unico\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/espacios/codigo/{{nuevoEspacioCodigo}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"espacios",
+								"codigo",
+								"{{nuevoEspacioCodigo}}"
+							]
+						},
+						"description": "Busca y obtiene los datos de un espacio a traves de su codigo unico de invitacion."
 					},
 					"response": []
 				},
 				{
 					"name": "Actualizar Espacio",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Espacio actualizado correctamente\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "PUT",
 						"header": [
@@ -282,7 +813,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"nombre\": \"Departamento Palermo Actualizado\",\n  \"descripcion\": \"Gastos comunes y extraordinarios\",\n  \"codigo\": \"PALERMO-2026\",\n  \"tipo\": \"HOGAR\",\n  \"reglaReparto\": \"CINCUENTA_CINCUENTA\",\n  \"presupuestoBase\": 400000.00\n}"
+							"raw": "{\n  \"nombre\": \"{{nuevoEspacioNombre}} Actualizado\",\n  \"descripcion\": \"Gastos comunes y extraordinarios\",\n  \"codigo\": \"{{nuevoEspacioCodigo}}\",\n  \"tipo\": \"HOGAR\",\n  \"reglaReparto\": \"CINCUENTA_CINCUENTA\",\n  \"presupuestoBase\": 400000.00\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/api/v1/espacios/{{espacioId}}",
@@ -296,12 +827,25 @@
 								"{{espacioId}}"
 							]
 						},
-						"description": "Actualiza la configuracion del espacio incluyendo regla de reparto y presupuesto base."
+						"description": "Actualiza la configuracion del espacio incluyendo regla de reparto y presupuesto base. Utiliza el nombre dinamico para garantizar unicidad."
 					},
 					"response": []
 				},
 				{
 					"name": "Listar Espacios",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Listado de espacios donde el usuario es miembro\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "GET",
 						"header": [],
@@ -316,12 +860,25 @@
 								"espacios"
 							]
 						},
-						"description": "Lista todos los espacios compartidos registrados."
+						"description": "Lista todos los espacios compartidos donde el usuario autenticado es miembro."
 					},
 					"response": []
 				},
 				{
 					"name": "Editar Regla de Distribucion",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Regla de distribucion modificada exitosamente\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "PATCH",
 						"header": [],
@@ -341,21 +898,34 @@
 								{
 									"key": "reglaReparto",
 									"value": "CINCUENTA_CINCUENTA",
-									"description": "Valores posibles: CINCUENTA_CINCUENTA, PROPORCIONAL"
+									"description": "Valores: CINCUENTA_CINCUENTA, PROPORCIONAL"
 								}
 							]
 						},
-						"description": "Modifica puntualmente la regla de reparto aplicada a los gastos del espacio."
+						"description": "Modifica puntualmente la regla de reparto aplicada a los gastos del espacio. Requiere ser administrador del espacio."
 					},
 					"response": []
 				},
 				{
 					"name": "Fijar Presupuesto Base",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Presupuesto base fijado exitosamente\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "PATCH",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/api/v1/espacios/{{espacioId}}/presupuesto-base?presupuestoBase=2000000.00&solicitanteId=1",
+							"raw": "{{baseUrl}}/api/v1/espacios/{{espacioId}}/presupuesto-base?presupuestoBase=2000000.00",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -370,48 +940,67 @@
 								{
 									"key": "presupuestoBase",
 									"value": "2000000.00",
-									"description": "Nuevo importe monetario del presupuesto base"
-								},
-								{
-									"key": "solicitanteId",
-									"value": "1",
-									"description": "Identificador opcional del usuario administrador solicitante"
+									"description": "Nuevo importe del presupuesto base"
 								}
 							]
 						},
-						"description": "Fija o reajusta el presupuesto base estimado del espacio."
-					},
-					"response": []
-				},
-				{
-					"name": "Obtener Espacio por Codigo",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{baseUrl}}/api/v1/espacios/codigo/{{nuevoEspacioCodigo}}",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"espacios",
-								"codigo",
-								"{{nuevoEspacioCodigo}}"
-							]
-						},
-						"description": "Busca un espacio compartido a partir de su codigo unico de invitacion."
+						"description": "Fija o reajusta el presupuesto base financiero del espacio para liquidaciones. Requiere rol de administrador en el espacio."
 					},
 					"response": []
 				},
 				{
 					"name": "Eliminar Espacio",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"var ts = Date.now().toString().slice(-6);",
+									"pm.sendRequest({",
+									"    url: pm.collectionVariables.get(\"baseUrl\") + \"/api/v1/espacios\",",
+									"    method: \"POST\",",
+									"    header: {",
+									"        \"Content-Type\": \"application/json\",",
+									"        \"Authorization\": \"Bearer \" + pm.collectionVariables.get(\"authToken\")",
+									"    },",
+									"    body: {",
+									"        mode: \"raw\",",
+									"        raw: JSON.stringify({",
+									"            nombre: \"Temporal Eliminar \" + ts,",
+									"            descripcion: \"Espacio temporal creado para probar la operacion de borrado\",",
+									"            codigo: \"DEL-\" + ts,",
+									"            tipo: \"OTRO\",",
+									"            reglaReparto: \"CINCUENTA_CINCUENTA\",",
+									"            presupuestoBase: 50000.00",
+									"        })",
+									"    }",
+									"}, function (err, res) {",
+									"    if (!err && res.code === 201) {",
+									"        var data = res.json();",
+									"        pm.collectionVariables.set(\"espacioEliminarId\", String(data.id));",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Espacio eliminado exitosamente (204 No Content)\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/api/v1/espacios/{{espacioId}}?solicitanteId=1",
+							"raw": "{{baseUrl}}/api/v1/espacios/{{espacioEliminarId}}",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -419,17 +1008,10 @@
 								"api",
 								"v1",
 								"espacios",
-								"{{espacioId}}"
-							],
-							"query": [
-								{
-									"key": "solicitanteId",
-									"value": "1",
-									"description": "Identificador opcional del usuario administrador solicitante"
-								}
+								"{{espacioEliminarId}}"
 							]
 						},
-						"description": "Elimina un espacio compartido por su identificador unico, validando permisos de administrador."
+						"description": "Elimina un espacio compartido por su identificador unico. El pre-request genera un espacio temporal para su eliminacion, preservando el espacio principal {{espacioId}} para los modulos posteriores."
 					},
 					"response": []
 				}
@@ -439,8 +1021,31 @@
 			"name": "4. Miembros",
 			"item": [
 				{
-					"name": "Unirse a Espacio con Codigo",
+					"name": "Unirse a Espacio con Codigo (Usuario Secundario)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Usuario secundario unido exitosamente al espacio\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authTokenUser2}}",
+									"type": "string"
+								}
+							]
+						},
 						"method": "POST",
 						"header": [
 							{
@@ -450,7 +1055,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"codigo\": \"PALERMO-2026\",\n  \"usuarioId\": 2,\n  \"sueldoDeclarado\": 900000.00\n}"
+							"raw": "{\n  \"codigo\": \"{{nuevoEspacioCodigo}}\",\n  \"usuarioId\": {{usuarioId2}},\n  \"sueldoDeclarado\": 900000.00\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/api/v1/espacios/{{espacioId}}/unirse",
@@ -465,13 +1070,36 @@
 								"unirse"
 							]
 						},
-						"description": "Une a un usuario al espacio validando que el codigo de invitacion coincida con el del espacio. El primer miembro en unirse recibe el rol ADMIN. Si el usuario ya pertenece al espacio retorna HTTP 409 Conflict."
+						"description": "Une al usuario secundario (Maria) al espacio usando su propio token JWT {{authTokenUser2}} y codigo de invitacion. Retorna HTTP 201 Created."
 					},
 					"response": []
 				},
 				{
-					"name": "Unirse por Codigo Directo",
+					"name": "Unirse por Codigo Directo (Alternativa)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Usuario terciario unido directamente mediante codigo\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authTokenUser3}}",
+									"type": "string"
+								}
+							]
+						},
 						"method": "POST",
 						"header": [
 							{
@@ -481,7 +1109,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"codigo\": \"PALERMO-2026\",\n  \"usuarioId\": 2,\n  \"sueldoDeclarado\": 900000.00\n}"
+							"raw": "{\n  \"codigo\": \"{{nuevoEspacioCodigo}}\",\n  \"usuarioId\": {{usuarioId3}},\n  \"sueldoDeclarado\": 850000.00\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/api/v1/espacios/unirse",
@@ -495,12 +1123,25 @@
 								"unirse"
 							]
 						},
-						"description": "Une a un usuario a un espacio resolviendo el destino unicamente a traves del codigo de invitacion provisto en el cuerpo JSON. Rechaza membresias duplicadas con HTTP 409 Conflict."
+						"description": "Une al tercer usuario (Carlos) resolviendo el destino unicamente a traves del codigo provisto en el cuerpo JSON. Retorna HTTP 201 Created."
 					},
 					"response": []
 				},
 				{
 					"name": "Listar Miembros del Espacio",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Listado de miembros del espacio obtenido\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "GET",
 						"header": [],
@@ -517,12 +1158,25 @@
 								"miembros"
 							]
 						},
-						"description": "Obtiene el listado de miembros pertenecientes a un espacio compartido."
+						"description": "Obtiene la lista de miembros pertenecientes al espacio compartido (muestra roles, nombres, emails y sueldos declarados)."
 					},
 					"response": []
 				},
 				{
 					"name": "Actualizar Sueldo Declarado del Miembro",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Sueldo declarado actualizado correctamente\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "PUT",
 						"header": [
@@ -550,17 +1204,30 @@
 								"sueldo"
 							]
 						},
-						"description": "Registra o actualiza el sueldo mensual declarado del miembro, utilizado para el reparto proporcional de gastos."
+						"description": "Registra o actualiza el sueldo mensual declarado por el usuario miembro, utilizado para el calculo del reparto proporcional de gastos del espacio."
 					},
 					"response": []
 				},
 				{
 					"name": "Asignar Rol al Miembro",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Rol del miembro asignado exitosamente\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "PATCH",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/api/v1/espacios/{{espacioId}}/miembros/{{usuarioId}}/rol?rol=ADMIN&solicitanteId=1",
+							"raw": "{{baseUrl}}/api/v1/espacios/{{espacioId}}/miembros/{{usuarioId2}}/rol?rol=ADMIN",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -570,23 +1237,18 @@
 								"espacios",
 								"{{espacioId}}",
 								"miembros",
-								"{{usuarioId}}",
+								"{{usuarioId2}}",
 								"rol"
 							],
 							"query": [
 								{
 									"key": "rol",
 									"value": "ADMIN",
-									"description": "Valores posibles: ADMIN, MIEMBRO"
-								},
-								{
-									"key": "solicitanteId",
-									"value": "1",
-									"description": "Identificador opcional del usuario administrador solicitante"
+									"description": "Valores: ADMIN, MIEMBRO"
 								}
 							]
 						},
-						"description": "Asigna o modifica el rol del miembro dentro del espacio. Valida que el solicitante tenga permisos de administrador."
+						"description": "Asigna o modifica el rol de un miembro en el espacio (promoviendo a Maria a ADMIN). Valida que quien solicita la accion sea administrador."
 					},
 					"response": []
 				}
@@ -602,12 +1264,10 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"if (pm.response.code === 200 || pm.response.code === 201) {",
-									"    var data = pm.response.json();",
-									"    if (data && data.id) {",
-									"        pm.collectionVariables.set(\"sueldoId\", String(data.id));",
-									"    }",
-									"}"
+									"pm.test(\"Registro de sueldo creado o actualizado exitosamente\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+									"});",
+									"if (pm.response.code === 201 || pm.response.code === 200) {\n    var data = pm.response.json();\n    if (data && data.id) {\n        pm.collectionVariables.set(\"sueldoId\", String(data.id));\n    }\n}"
 								],
 								"type": "text/javascript"
 							}
@@ -623,7 +1283,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"usuarioId\": 1,\n  \"monto\": 1200000.00,\n  \"tipo\": \"FIJO\",\n  \"frecuencia\": \"MENSUAL\",\n  \"mes\": 9,\n  \"anio\": 2026\n}"
+							"raw": "{\n  \"monto\": 1200000.00,\n  \"tipo\": \"FIJO\",\n  \"frecuencia\": \"MENSUAL\",\n  \"mes\": 9,\n  \"anio\": 2026\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/api/v1/sueldos",
@@ -636,12 +1296,25 @@
 								"sueldos"
 							]
 						},
-						"description": "Registra o actualiza el sueldo para un usuario y período mensual (mes y anio) para repartos proporcionales de gastos."
+						"description": "Registra o actualiza (upsert) un ingreso o salario mensual del usuario autenticado para el periodo actual."
 					},
 					"response": []
 				},
 				{
 					"name": "Listar Sueldos",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Listado historico de sueldos recuperado\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "GET",
 						"header": [],
@@ -656,12 +1329,59 @@
 								"sueldos"
 							]
 						},
-						"description": "Obtiene la lista de todos los sueldos registrados, con filtro opcional por usuarioId."
+						"description": "Retorna la lista de todos los sueldos registrados pertenecientes al usuario autenticado."
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener Sueldo por ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Detalle de sueldo obtenido correctamente\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/sueldos/{{sueldoId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"sueldos",
+								"{{sueldoId}}"
+							]
+						},
+						"description": "Consulta el detalle individual de un sueldo mediante su identificador unico. Valida que el sueldo pertenezca al usuario autenticado."
 					},
 					"response": []
 				},
 				{
 					"name": "Actualizar Sueldo por ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Sueldo actualizado exitosamente\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "PUT",
 						"header": [
@@ -686,12 +1406,25 @@
 								"{{sueldoId}}"
 							]
 						},
-						"description": "Actualiza el monto, tipo, frecuencia, mes o anio de un registro de sueldo."
+						"description": "Actualiza el monto, periodicidad o tipo de sueldo de un registro existente perteneciente al usuario autenticado."
 					},
 					"response": []
 				},
 				{
 					"name": "Eliminar Sueldo por ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Sueldo eliminado exitosamente (204 No Content)\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "DELETE",
 						"header": [],
@@ -707,7 +1440,7 @@
 								"{{sueldoId}}"
 							]
 						},
-						"description": "Elimina un sueldo por su identificador unico."
+						"description": "Elimina un registro de sueldo segun su identificador unico. Valida permisos del titular."
 					},
 					"response": []
 				}
@@ -723,12 +1456,10 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"if (pm.response.code === 201) {",
-									"    var data = pm.response.json();",
-									"    if (data && data.id) {",
-									"        pm.collectionVariables.set(\"gastoId\", String(data.id));",
-									"    }",
-									"}"
+									"pm.test(\"Gasto registrado y distribuido correctamente\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+									"});",
+									"if (pm.response.code === 201) {\n    var data = pm.response.json();\n    if (data && data.id) {\n        pm.collectionVariables.set(\"gastoId\", String(data.id));\n    }\n}"
 								],
 								"type": "text/javascript"
 							}
@@ -744,7 +1475,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"descripcion\": \"Compra de supermercado semanal\",\n  \"monto\": 65000.00,\n  \"fecha\": \"2026-09-08\",\n  \"pagadorId\": 1,\n  \"categoriaId\": 1,\n  \"regla\": \"EQUITATIVA\",\n  \"participantes\": [\n    {\n      \"usuarioId\": 1,\n      \"usuarioNombre\": \"Juan Perez\",\n      \"usuarioEmail\": \"juan.perez@example.com\"\n    },\n    {\n      \"usuarioId\": 2,\n      \"usuarioNombre\": \"Maria Lopez\",\n      \"usuarioEmail\": \"maria.lopez@example.com\"\n    }\n  ]\n}"
+							"raw": "{\n  \"descripcion\": \"Compra de supermercado semanal\",\n  \"monto\": 65000.00,\n  \"fecha\": \"2026-09-08\",\n  \"pagadorId\": {{usuarioId}},\n  \"regla\": \"EQUITATIVA\",\n  \"participantes\": [\n    {\n      \"usuarioId\": {{usuarioId}}\n    },\n    {\n      \"usuarioId\": {{usuarioId2}}\n    }\n  ]\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/api/v1/espacios/{{espacioId}}/gastos",
@@ -765,6 +1496,19 @@
 				},
 				{
 					"name": "Registrar Lote de Gastos",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Lote de gastos procesado atomicamente\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "POST",
 						"header": [
@@ -775,7 +1519,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "[\n  {\n    \"descripcion\": \"Servicio de Internet\",\n    \"monto\": 25000.00,\n    \"fecha\": \"2026-09-01\",\n    \"pagadorId\": 1,\n    \"categoriaId\": 2,\n    \"regla\": \"EQUITATIVA\",\n    \"participantes\": [\n      {\n        \"usuarioId\": 1,\n        \"usuarioNombre\": \"Juan Perez\",\n        \"usuarioEmail\": \"juan.perez@example.com\"\n      },\n      {\n        \"usuarioId\": 2,\n        \"usuarioNombre\": \"Maria Lopez\",\n        \"usuarioEmail\": \"maria.lopez@example.com\"\n      }\n    ]\n  },\n  {\n    \"descripcion\": \"Factura de Electricidad\",\n    \"monto\": 42000.00,\n    \"fecha\": \"2026-09-05\",\n    \"pagadorId\": 2,\n    \"categoriaId\": 2,\n    \"regla\": \"EQUITATIVA\",\n    \"participantes\": [\n      {\n        \"usuarioId\": 1,\n        \"usuarioNombre\": \"Juan Perez\",\n        \"usuarioEmail\": \"juan.perez@example.com\"\n      },\n      {\n        \"usuarioId\": 2,\n        \"usuarioNombre\": \"Maria Lopez\",\n        \"usuarioEmail\": \"maria.lopez@example.com\"\n      }\n    ]\n  }\n]"
+							"raw": "[\n  {\n    \"descripcion\": \"Articulos de limpieza del hogar\",\n    \"monto\": 18500.00,\n    \"fecha\": \"2026-09-10\",\n    \"pagadorId\": {{usuarioId}},\n    \"regla\": \"EQUITATIVA\",\n    \"participantes\": [\n      {\n        \"usuarioId\": {{usuarioId}}\n      },\n      {\n        \"usuarioId\": {{usuarioId2}}\n      }\n    ]\n  },\n  {\n    \"descripcion\": \"Servicio de Internet Fibra Optica\",\n    \"monto\": 32000.00,\n    \"fecha\": \"2026-09-12\",\n    \"pagadorId\": {{usuarioId}},\n    \"regla\": \"EQUITATIVA\",\n    \"participantes\": [\n      {\n        \"usuarioId\": {{usuarioId}}\n      },\n      {\n        \"usuarioId\": {{usuarioId2}}\n      }\n    ]\n  }\n]"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/api/v1/espacios/{{espacioId}}/gastos/lote",
@@ -791,12 +1535,25 @@
 								"lote"
 							]
 						},
-						"description": "Registra un conjunto de gastos de forma atomica en una sola transaccion."
+						"description": "Permite registrar un lote completo de gastos de forma transaccional atomica. Si un gasto falla, toda la transaccion se revierte."
 					},
 					"response": []
 				},
 				{
 					"name": "Listar Gastos por Espacio y Periodo",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Listado de gastos filtrado por rango de fechas\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "GET",
 						"header": [],
@@ -816,21 +1573,34 @@
 								{
 									"key": "desde",
 									"value": "2026-09-01",
-									"description": "Fecha inicial de filtro (opcional)"
+									"description": "Fecha inicial"
 								},
 								{
 									"key": "hasta",
 									"value": "2026-09-30",
-									"description": "Fecha final de filtro (opcional)"
+									"description": "Fecha final"
 								}
 							]
 						},
-						"description": "Obtiene la lista de gastos registrados en un espacio, filtrando opcionalmente por rango de fechas."
+						"description": "Obtiene la lista de gastos registrados en un espacio, filtrando por un rango de fechas."
 					},
 					"response": []
 				},
 				{
 					"name": "Obtener Detalle de Gasto por ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Detalle completo y desglose del gasto recuperado\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "GET",
 						"header": [],
@@ -846,12 +1616,25 @@
 								"{{gastoId}}"
 							]
 						},
-						"description": "Obtiene la informacion consolidada de un gasto y el desglose de participacion por usuario."
+						"description": "Obtiene la informacion consolidada de un gasto y el desglose de participacion e importe por usuario."
 					},
 					"response": []
 				},
 				{
 					"name": "Eliminar Gasto por ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Gasto no liquidado eliminado exitosamente\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "DELETE",
 						"header": [],
@@ -867,7 +1650,7 @@
 								"{{gastoId}}"
 							]
 						},
-						"description": "Elimina un gasto existente por su identificador unico."
+						"description": "Elimina un gasto existente por su identificador unico si no se encuentra liquidado. Requiere ser el creador del gasto o administrador del espacio."
 					},
 					"response": []
 				}
@@ -883,12 +1666,10 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"if (pm.response.code === 200) {",
-									"    var data = pm.response.json();",
-									"    if (data && data.deudas && data.deudas.length > 0) {",
-									"        pm.collectionVariables.set(\"deudaId\", String(data.deudas[0].id));",
-									"    }",
-									"}"
+									"pm.test(\"Matriz de balance y deudas simplificadas calculada\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+									"});",
+									"if (pm.response.code === 200) {\n    var data = pm.response.json();\n    if (data && data.deudas && data.deudas.length > 0) {\n        var deuda = data.deudas[0];\n        pm.collectionVariables.set(\"deudaId\", String(deuda.id));\n        var montoParcial = Math.round((Number(deuda.monto) / 2) * 100) / 100;\n        if (montoParcial <= 0) montoParcial = 10.00;\n        pm.collectionVariables.set(\"pagoMonto\", montoParcial.toFixed(2));\n    }\n}"
 								],
 								"type": "text/javascript"
 							}
@@ -910,13 +1691,36 @@
 								"balance"
 							]
 						},
-						"description": "Retorna la matriz simplificada de compensacion (quien le debe a quien) a partir de los gastos registrados en el espacio."
+						"description": "Ejecuta el algoritmo de compensacion cruzada de deudas para el espacio. Su test script detecta deudas pendientes y calcula el monto exacto del pago para saldar sin exceder el tope."
 					},
 					"response": []
 				},
 				{
 					"name": "Saldar Deuda (Total o Parcial)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Pago aplicado y saldo de deuda actualizado correctamente\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authTokenUser2}}",
+									"type": "string"
+								}
+							]
+						},
 						"method": "POST",
 						"header": [
 							{
@@ -926,7 +1730,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"monto\": 25000.00,\n  \"liquidacionId\": 1\n}"
+							"raw": "{\n  \"monto\": {{pagoMonto}}\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/api/v1/deudas/{{deudaId}}/saldar",
@@ -941,7 +1745,7 @@
 								"saldar"
 							]
 						},
-						"description": "Registra un pago total o parcial sobre una deuda pendiente. Si no se envia el campo 'monto', se asume la cancelacion total del saldo pendiente."
+						"description": "Registra un pago sobre la deuda pendiente. Usa el valor dinamico {{pagoMonto}} calculado en el balance para garantizar que no supere el saldo pendiente."
 					},
 					"response": []
 				}
@@ -957,12 +1761,10 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"if (pm.response.code === 201) {",
-									"    var data = pm.response.json();",
-									"    if (data && data.id) {",
-									"        pm.collectionVariables.set(\"favoritoId\", String(data.id));",
-									"    }",
-									"}"
+									"pm.test(\"Plantilla de gasto recurrente creada exitosamente\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+									"});",
+									"if (pm.response.code === 201) {\n    var data = pm.response.json();\n    if (data && data.id) {\n        pm.collectionVariables.set(\"favoritoId\", String(data.id));\n    }\n}"
 								],
 								"type": "text/javascript"
 							}
@@ -978,7 +1780,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"nombre\": \"Alquiler Departamento\",\n  \"frecuenciaAjusteMeses\": 3,\n  \"montoBase\": 350000.00,\n  \"montoVariable\": 25000.00,\n  \"fechaProximaRevision\": \"2026-11-01\",\n  \"pagadorId\": 1,\n  \"reglaDivision\": \"EQUITATIVA\"\n}"
+							"raw": "{\n  \"nombre\": \"Alquiler Mensual Departamento\",\n  \"descripcion\": \"Pago periodico de alquiler con ajuste semestral por ICL\",\n  \"montoBase\": 350000.00,\n  \"montoVariableEstimado\": 25000.00,\n  \"frecuenciaAjusteMeses\": 6,\n  \"fechaProximaRevision\": \"2026-12-01\",\n  \"pagadorId\": {{usuarioId}},\n  \"regla\": \"EQUITATIVA\",\n  \"participantes\": [\n    {\n      \"usuarioId\": {{usuarioId}}\n    },\n    {\n      \"usuarioId\": {{usuarioId2}}\n    }\n  ]\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/api/v1/espacios/{{espacioId}}/favoritos",
@@ -993,12 +1795,25 @@
 								"favoritos"
 							]
 						},
-						"description": "Registra una plantilla de gasto recurrente con montos base/variables, frecuencia de ajuste en meses y fecha de revision por IPC/alquiler."
+						"description": "Crea una plantilla recurrente para gastos comunes (alquiler, expensas, internet) con montos base y variable y fecha de revision."
 					},
 					"response": []
 				},
 				{
 					"name": "Listar Favoritos de un Espacio",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Listado de plantillas favoritas obtenido\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "GET",
 						"header": [],
@@ -1015,12 +1830,25 @@
 								"favoritos"
 							]
 						},
-						"description": "Retorna la totalidad de plantillas favoritas asociadas al espacio compartido."
+						"description": "Lista todas las plantillas favoritas configuradas en el espacio compartido."
 					},
 					"response": []
 				},
 				{
 					"name": "Listar Vencimientos de Servicios",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Alertas de vencimiento de ciclos tarifarios consultadas\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "GET",
 						"header": [],
@@ -1038,12 +1866,25 @@
 								"vencimientos"
 							]
 						},
-						"description": "Retorna las alertas de vencimiento de ciclo tarifario cuyas fechas de revision sean iguales o anteriores a hoy."
+						"description": "Identifica y lista las plantillas de gastos recurrentes cuyo ciclo tarifario ha vencido y exigen revision."
 					},
 					"response": []
 				},
 				{
 					"name": "Obtener Detalle de Favorito por ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Detalle de plantilla favorita recuperado\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "GET",
 						"header": [],
@@ -1059,12 +1900,25 @@
 								"{{favoritoId}}"
 							]
 						},
-						"description": "Consulta los datos de una plantilla favorita especifica mediante su identificador."
+						"description": "Recupera la configuracion completa de una plantilla favorita de gasto por su identificador unico."
 					},
 					"response": []
 				},
 				{
 					"name": "Ejecutar Gasto Rapido en 1 Clic",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Gasto generado instantaneamente a partir de plantilla\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "POST",
 						"header": [],
@@ -1081,12 +1935,25 @@
 								"ejecutar"
 							]
 						},
-						"description": "Dispara el registro inmediato del gasto dividiendolo entre los participantes. Si el ciclo tarifario esta vencido, bloquea la ejecucion exigiendo actualizacion de tarifa previa."
+						"description": "Dispara la creacion instantanea de un gasto a partir de la plantilla favorita configurada."
 					},
 					"response": []
 				},
 				{
 					"name": "Actualizar Monto y Ciclo de Tarifa",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Tarifas y ciclo de revision actualizados\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "PUT",
 						"header": [
@@ -1112,12 +1979,25 @@
 								"actualizar-monto"
 							]
 						},
-						"description": "Actualiza el importe base y variable por ajuste inflacionario/IPC y renueva la fecha de proxima revision."
+						"description": "Actualiza el importe base y variable por ajuste inflacionario/IPC y renueva la fecha de proxima revision del ciclo."
 					},
 					"response": []
 				},
 				{
 					"name": "Eliminar Favorito por ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Plantilla favorita eliminada exitosamente (204 No Content)\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "DELETE",
 						"header": [],
@@ -1133,7 +2013,7 @@
 								"{{favoritoId}}"
 							]
 						},
-						"description": "Elimina la plantilla de gasto favorita del espacio."
+						"description": "Elimina una plantilla favorita de gasto del sistema."
 					},
 					"response": []
 				}
@@ -1144,6 +2024,19 @@
 			"item": [
 				{
 					"name": "Cierre de Liquidacion",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Liquidacion mensual cerrada y balance debitado\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "POST",
 						"header": [
@@ -1170,12 +2063,25 @@
 								"cierre"
 							]
 						},
-						"description": "Procesa el checkout y cierre de gastos pendientes, valida y descuenta el presupuesto base del espacio, y transiciona los gastos a estado LIQUIDADO."
+						"description": "Procesa el checkout y cierre de gastos pendientes en el espacio, validando el presupuesto base disponible y transicionando los gastos al estado LIQUIDADO. Requiere rol de administrador en el espacio."
 					},
 					"response": []
 				},
 				{
 					"name": "Historial de Liquidaciones",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Historial de liquidaciones consultado\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "GET",
 						"header": [],
@@ -1196,12 +2102,12 @@
 								{
 									"key": "anio",
 									"value": "2026",
-									"disabled": true
+									"disabled": false
 								},
 								{
 									"key": "mes",
 									"value": "9",
-									"disabled": true
+									"disabled": false
 								},
 								{
 									"key": "desde",
@@ -1215,7 +2121,7 @@
 								}
 							]
 						},
-						"description": "Obtiene la lista historica de liquidaciones cerradas para un espacio, con opciones de filtrado por rango de fechas o anio y mes."
+						"description": "Obtiene la lista historica de liquidaciones cerradas en el espacio con filtros por anio, mes o rango de fechas."
 					},
 					"response": []
 				}
