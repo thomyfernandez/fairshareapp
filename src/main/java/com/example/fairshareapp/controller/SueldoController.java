@@ -1,10 +1,16 @@
 package com.example.fairshareapp.controller;
 
+import com.example.fairshareapp.exception.ReglaInvalidaException;
+import com.example.fairshareapp.model.entity.Usuario;
 import com.example.fairshareapp.model.request.SueldoRequest;
 import com.example.fairshareapp.model.response.SueldoResponse;
+import com.example.fairshareapp.model.response.SueldoUpsertResult;
 import com.example.fairshareapp.service.SueldoService;
-import com.example.fairshareapp.model.mapper.SueldoMapper;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -15,66 +21,129 @@ public class SueldoController {
 
     private final SueldoService sueldoService;
 
-    private final SueldoMapper sueldoMapper;
-
     /**
-     * Constructor con inyeccion de dependencias de servicio y mapper de sueldos.
+     * Constructor con inyeccion de dependencias del servicio de sueldos.
      *
      * @param sueldoService Servicio para la gestion de sueldos.
-     * @param sueldoMapper Mapper para la transformacion de entidades y DTOs de sueldo.
      */
-    public SueldoController(SueldoService sueldoService, SueldoMapper sueldoMapper) {
+    public SueldoController(SueldoService sueldoService) {
         this.sueldoService = sueldoService;
-        this.sueldoMapper = sueldoMapper;
     }
 
     /**
      * Retorna el listado de sueldos registrados, filtrando opcionalmente por usuario.
      *
      * @param usuarioId Identificador opcional del usuario para filtrar sueldos.
-     * @return Lista de SueldoResponse.
+     * @return ResponseEntity con la lista de SueldoResponse.
      */
     @GetMapping
-    public List<SueldoResponse> getAllSueldos(@RequestParam(required = false) Long usuarioId) {
-        if (usuarioId != null) {
-            return sueldoService.obtenerSueldosPorUsuario(usuarioId);
-        }
-        return sueldoService.getAllSueldos();
+    public ResponseEntity<List<SueldoResponse>> getAllSueldos(@RequestParam(required = false) Long usuarioId) {
+        List<SueldoResponse> sueldos = usuarioId != null
+                ? sueldoService.obtenerSueldosPorUsuario(usuarioId)
+                : sueldoService.obtenerTodos();
+        return ResponseEntity.ok(sueldos);
     }
 
     /**
-     * Registra o actualiza el sueldo para un usuario y período mensual específico.
+     * Retorna el detalle de un sueldo por su identificador.
      *
-     * @param request Datos del sueldo incluyendo monto, frecuencia, mes, anio y usuarioId opcional.
+     * @param id Identificador unico del sueldo.
+     * @return ResponseEntity con el SueldoResponse encontrado.
+     */
+    @GetMapping("/{id}")
+    public ResponseEntity<SueldoResponse> getSueldo(@PathVariable Long id) {
+        return ResponseEntity.ok(sueldoService.obtenerSueldo(id));
+    }
+
+    /**
+     * Registra o actualiza (upsert) el sueldo de un usuario para un periodo mensual especifico.
+     * Si no se envia usuarioId en el body, se utiliza la identidad autenticada del solicitante.
+     * Devuelve 201 Created si crea un registro nuevo, o 200 OK si actualiza uno existente.
+     *
+     * @param request Datos del sueldo incluyendo monto, tipo, frecuencia, mes y anio.
      * @return ResponseEntity con el SueldoResponse creado o actualizado.
      */
     @PostMapping
-    public ResponseEntity<SueldoResponse> crearSueldo(@RequestBody SueldoRequest request) {
-        Long usuarioId = request.getUsuarioId() != null ? request.getUsuarioId() : 1L;
-        SueldoResponse response = sueldoService.crearSueldo(usuarioId, request);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<SueldoResponse> crearSueldo(@Valid @RequestBody SueldoRequest request) {
+        Long usuarioId = resolverUsuarioId(request.getUsuarioId());
+        SueldoUpsertResult resultado = sueldoService.crearOActualizarSueldo(usuarioId, request);
+        HttpStatus status = resultado.creado() ? HttpStatus.CREATED : HttpStatus.OK;
+        return ResponseEntity.status(status).body(resultado.sueldo());
     }
 
     /**
-     * Actualiza los datos de un sueldo existente identificado por su ID.
+     * Actualiza los datos de un sueldo existente identificado por su ID. El usuario propietario
+     * no puede reasignarse mediante este endpoint.
      *
      * @param id Identificador unico del sueldo a modificar.
-     * @param sueldoRequest Nuevos datos del sueldo.
-     * @return SueldoResponse actualizado.
+     * @param request Nuevos datos del sueldo.
+     * @return ResponseEntity con el SueldoResponse actualizado.
      */
     @PutMapping("/{id}")
-    public SueldoResponse updateSueldo(@PathVariable Long id, @RequestBody SueldoRequest sueldoRequest) {
-        SueldoResponse sueldo = sueldoMapper.toSueldoResponse(sueldoRequest);
-        return sueldoService.updateSueldo(id, sueldo).toSueldoResponse();
+    public ResponseEntity<SueldoResponse> updateSueldo(@PathVariable Long id, @Valid @RequestBody SueldoRequest request) {
+        validarAccesoSueldo(id);
+        return ResponseEntity.ok(sueldoService.actualizarSueldo(id, request));
     }
 
     /**
      * Elimina un registro de sueldo segun su identificador unico.
      *
      * @param id Identificador unico del sueldo a borrar.
+     * @return ResponseEntity vacio con codigo HTTP 204 No Content.
      */
     @DeleteMapping("/{id}")
-    public void deleteSueldo(@PathVariable Long id) {
-        sueldoService.deleteSueldo(id);
+    public ResponseEntity<Void> deleteSueldo(@PathVariable Long id) {
+        validarAccesoSueldo(id);
+        sueldoService.eliminarSueldo(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Resuelve el identificador de usuario a utilizar para crear un sueldo: exige que se
+     * envie un usuarioId valido o que exista una identidad autenticada. Rechaza el intento
+     * de registrar el sueldo de un usuario distinto al autenticado.
+     *
+     * @param usuarioIdSolicitado Identificador de usuario enviado en el request, si lo hubiera.
+     * @return Identificador de usuario a utilizar.
+     */
+    private Long resolverUsuarioId(Long usuarioIdSolicitado) {
+        Usuario autenticado = usuarioAutenticado();
+
+        if (usuarioIdSolicitado != null) {
+            if (autenticado != null && !usuarioIdSolicitado.equals(autenticado.getId())) {
+                throw new ReglaInvalidaException("Acceso denegado: no puede registrar el sueldo de otro usuario");
+            }
+            return usuarioIdSolicitado;
+        }
+
+        if (autenticado != null) {
+            return autenticado.getId();
+        }
+
+        throw new ReglaInvalidaException("Debe especificarse un usuarioId valido o autenticarse");
+    }
+
+    /**
+     * Valida que, de existir una identidad autenticada, el sueldo consultado le pertenezca.
+     *
+     * @param sueldoId Identificador del sueldo sobre el que se quiere operar.
+     */
+    private void validarAccesoSueldo(Long sueldoId) {
+        Usuario autenticado = usuarioAutenticado();
+        if (autenticado == null) {
+            return;
+        }
+        SueldoResponse existente = sueldoService.obtenerSueldo(sueldoId);
+        if (existente.getUsuarioId() != null && !existente.getUsuarioId().equals(autenticado.getId())) {
+            throw new ReglaInvalidaException("Acceso denegado: el sueldo pertenece a otro usuario");
+        }
+    }
+
+    private Usuario usuarioAutenticado() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof Usuario usuario) {
+            return usuario;
+        }
+        return null;
     }
 }

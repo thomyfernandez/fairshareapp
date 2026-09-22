@@ -1,7 +1,6 @@
 package com.example.fairshareapp.model.mapper;
 
 import com.example.fairshareapp.model.entity.Sueldo;
-import com.example.fairshareapp.model.request.SueldoRequest;
 import com.example.fairshareapp.model.response.SueldoResponse;
 import org.springframework.stereotype.Component;
 
@@ -39,26 +38,6 @@ public class SueldoMapper {
     }
 
     /**
-     * Convierte una solicitud SueldoRequest a SueldoResponse.
-     *
-     * @param sueldoRequest DTO de solicitud.
-     * @return DTO SueldoResponse.
-     */
-    public SueldoResponse toSueldoResponse(SueldoRequest sueldoRequest) {
-        if (sueldoRequest == null) {
-            return null;
-        }
-        SueldoResponse response = new SueldoResponse();
-        response.setUsuarioId(sueldoRequest.getUsuarioId());
-        response.setMonto(sueldoRequest.getMonto());
-        response.setTipo(sueldoRequest.getTipo());
-        response.setFrecuencia(sueldoRequest.getFrecuencia());
-        response.setMes(sueldoRequest.getMes());
-        response.setAnio(sueldoRequest.getAnio());
-        return response;
-    }
-
-    /**
      * Convierte una lista de entidades Sueldo a lista de SueldoResponse.
      *
      * @param sueldos Lista de entidades Sueldo.
@@ -71,24 +50,5 @@ public class SueldoMapper {
         return sueldos.stream()
                 .map(this::toResponse)
                 .toList();
-    }
-
-    /**
-     * Convierte una solicitud SueldoRequest a una nueva entidad Sueldo.
-     *
-     * @param sueldoRequest DTO de solicitud.
-     * @return Entidad Sueldo construida.
-     */
-    public Sueldo toSueldo(SueldoRequest sueldoRequest) {
-        if (sueldoRequest == null) {
-            return null;
-        }
-        return Sueldo.builder()
-                .monto(sueldoRequest.getMonto())
-                .tipo(sueldoRequest.getTipo())
-                .frecuencia(sueldoRequest.getFrecuencia())
-                .mes(sueldoRequest.getMes())
-                .anio(sueldoRequest.getAnio())
-                .build();
     }
 }

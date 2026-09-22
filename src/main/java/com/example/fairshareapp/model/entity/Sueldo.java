@@ -7,7 +7,6 @@ import java.time.LocalDate;
 
 import com.example.fairshareapp.model.enums.FrecuenciaSueldo;
 import com.example.fairshareapp.model.enums.TipoSueldo;
-import com.example.fairshareapp.model.response.SueldoResponse;
 
 @Entity
 @Table(name = "sueldos", uniqueConstraints = {
@@ -44,25 +43,4 @@ public class Sueldo {
 
     @Column(nullable = false)
     private Integer anio;
-
-    /**
-     * Convierte la entidad Sueldo a su representacion SueldoResponse.
-     *
-     * @return DTO SueldoResponse con los datos de este registro.
-     */
-    public SueldoResponse toSueldoResponse() {
-        SueldoResponse sueldoResponse = new SueldoResponse();
-        sueldoResponse.setId(this.getId());
-        sueldoResponse.setMonto(this.getMonto());
-        sueldoResponse.setTipo(this.getTipo());
-        sueldoResponse.setFrecuencia(this.getFrecuencia());
-        sueldoResponse.setMes(this.getMes());
-        sueldoResponse.setAnio(this.getAnio());
-        if (this.getUsuario() != null) {
-            sueldoResponse.setUsuarioId(this.getUsuario().getId());
-            sueldoResponse.setUsuarioNombre(this.getUsuario().getNombre());
-        }
-
-        return sueldoResponse;
-    }
 }
