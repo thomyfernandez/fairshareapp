@@ -180,15 +180,21 @@ public class GastoService {
     }
 
     /**
-     * Elimina un gasto del sistema y sus participaciones asociadas en cascada.
+     * Elimina un gasto del sistema validando que no se encuentre liquidado.
      *
      * @param gastoId Identificador del gasto a eliminar.
      */
+    
     public void eliminarGasto(Long gastoId) {
-        if (!gastoRepository.existsById(gastoId)) {
-            throw new RecursoNoEncontradoException("Gasto no encontrado con id: " + gastoId);
+        Gasto gasto = gastoRepository.findById(gastoId)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Gasto no encontrado con id: " + gastoId));
+
+        // Valida que el gasto no haya sido cerrado por el motor de liquidaciones
+        if (gasto.getEstado() == com.example.fairshareapp.model.enums.EstadoGasto.LIQUIDADO) {
+            throw new ReglaInvalidaException("No se puede eliminar un gasto que ya se encuentra liquidado");
         }
-        gastoRepository.deleteById(gastoId);
+
+        gastoRepository.delete(gasto);
     }
 
     /**
