@@ -33,6 +33,17 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
     }
 
+    /**
+     * Maneja excepciones cuando se intenta ejecutar una plantilla de gasto recurrente con el ciclo de revision vencido.
+     *
+     * @param ex Excepcion capturada.
+     * @return Respuesta con codigo HTTP 409 Conflict.
+     */
+    @ExceptionHandler(CicloVencidoException.class)
+    public ResponseEntity<String> handleCicloVencido(CicloVencidoException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
+    }
+
 
     /**
      * Maneja excepciones cuando las credenciales de autenticacion son invalidas.

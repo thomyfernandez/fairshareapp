@@ -1,8 +1,10 @@
 package com.example.fairshareapp.controller;
 
+import com.example.fairshareapp.exception.ReglaInvalidaException;
 import com.example.fairshareapp.model.dto.ActualizarPrecioCicloDTO;
 import com.example.fairshareapp.model.dto.GastoDetalleDTO;
-import com.example.fairshareapp.model.dto.PlantillaGastoDTO;
+import com.example.fairshareapp.model.dto.PlantillaGastoRequestDTO;
+import com.example.fairshareapp.model.dto.PlantillaGastoResponseDTO;
 import com.example.fairshareapp.model.dto.ServicioVencimientoDTO;
 import com.example.fairshareapp.service.RecurrentesService;
 import jakarta.validation.Valid;
@@ -43,15 +45,19 @@ public class RecurrenteController {
     /**
      * Registra una nueva plantilla de gasto como favorita dentro de un espacio compartido.
      *
-     * @param id Identificador unico del espacio.
+     * @param id Identificador unico del espacio, tomado de la ruta.
      * @param dto Datos de la plantilla a registrar.
      * @return Plantilla creada con codigo HTTP 201 Created.
      */
     @PostMapping("/espacios/{id}/favoritos")
-    public ResponseEntity<PlantillaGastoDTO> crearFavorito(@PathVariable Long id,
-                                                           @Valid @RequestBody PlantillaGastoDTO dto) {
+    public ResponseEntity<PlantillaGastoResponseDTO> crearFavorito(@PathVariable Long id,
+                                                           @Valid @RequestBody PlantillaGastoRequestDTO dto) {
+        if (dto.getEspacioId() != null && !dto.getEspacioId().equals(id)) {
+            throw new ReglaInvalidaException("El id de espacio del cuerpo (" + dto.getEspacioId()
+                    + ") no coincide con el de la ruta (" + id + ")");
+        }
         dto.setEspacioId(id);
-        PlantillaGastoDTO nuevaPlantilla = recurrentesService.guardarFavorito(dto);
+        PlantillaGastoResponseDTO nuevaPlantilla = recurrentesService.guardarFavorito(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(nuevaPlantilla);
     }
 
@@ -64,15 +70,10 @@ public class RecurrenteController {
      * @return Lista de plantillas favoritas segun el criterio solicitado.
      */
     @GetMapping("/espacios/{id}/favoritos")
-    public ResponseEntity<List<PlantillaGastoDTO>> obtenerFavoritos(
+    public ResponseEntity<List<PlantillaGastoResponseDTO>> obtenerFavoritos(
             @PathVariable Long id,
             @RequestParam(required = false, defaultValue = "false") boolean soloVencidos) {
-        List<PlantillaGastoDTO> favoritos = recurrentesService.obtenerFavoritosPorEspacio(id);
-        if (soloVencidos) {
-            favoritos = favoritos.stream()
-                    .filter(p -> Boolean.TRUE.equals(p.getVencido()))
-                    .toList();
-        }
+        List<PlantillaGastoResponseDTO> favoritos = recurrentesService.obtenerFavoritosPorEspacio(id, soloVencidos);
         return ResponseEntity.ok(favoritos);
     }
 
@@ -95,8 +96,8 @@ public class RecurrenteController {
      * @return Detalle de la plantilla encontrada con codigo HTTP 200 OK.
      */
     @GetMapping("/favoritos/{id}")
-    public ResponseEntity<PlantillaGastoDTO> obtenerFavoritoPorId(@PathVariable Long id) {
-        PlantillaGastoDTO dto = recurrentesService.obtenerFavoritoPorId(id);
+    public ResponseEntity<PlantillaGastoResponseDTO> obtenerFavoritoPorId(@PathVariable Long id) {
+        PlantillaGastoResponseDTO dto = recurrentesService.obtenerFavoritoPorId(id);
         return ResponseEntity.ok(dto);
     }
 
@@ -121,9 +122,9 @@ public class RecurrenteController {
      * @return Plantilla actualizada con codigo HTTP 200 OK.
      */
     @PutMapping("/favoritos/{id}/actualizar-monto")
-    public ResponseEntity<PlantillaGastoDTO> actualizarMonto(@PathVariable Long id,
+    public ResponseEntity<PlantillaGastoResponseDTO> actualizarMonto(@PathVariable Long id,
                                                              @Valid @RequestBody ActualizarPrecioCicloDTO dto) {
-        PlantillaGastoDTO actualizada = recurrentesService.actualizarMonto(id, dto);
+        PlantillaGastoResponseDTO actualizada = recurrentesService.actualizarMonto(id, dto);
         return ResponseEntity.ok(actualizada);
     }
 
