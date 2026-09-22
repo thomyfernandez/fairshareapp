@@ -33,6 +33,17 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
     }
 
+    /**
+     * Maneja excepciones cuando ya existe un sueldo registrado para el mismo usuario, anio y mes.
+     *
+     * @param ex Excepcion de sueldo duplicado capturada.
+     * @return Respuesta con codigo HTTP 409 Conflict.
+     */
+    @ExceptionHandler(SueldoDuplicadoException.class)
+    public ResponseEntity<String> handleSueldoDuplicado(SueldoDuplicadoException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
+    }
+
 
     /**
      * Maneja excepciones cuando las credenciales de autenticacion son invalidas.

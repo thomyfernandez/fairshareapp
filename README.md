@@ -130,12 +130,15 @@ docker compose up --build
 ### 5. Gestion de Sueldos
 Permite registrar y consultar los ingresos mensuales de los usuarios asociados a un periodo especifico (`mes` y `anio`). La regla de division proporcional de gastos (`PROPORCIONAL_INGRESOS`) utiliza automaticamente el sueldo correspondiente al mes y anio en que se realizo el gasto, con retrocompatibilidad al ultimo sueldo registrado o al sueldo base del usuario si no hubiese liquidacion especifica.
 
+No existe un usuario por defecto: si el body no incluye `usuarioId`, se utiliza la identidad autenticada (JWT); si no hay ninguna de las dos, se rechaza con 400. Un usuario autenticado no puede crear, actualizar ni eliminar el sueldo de otro usuario. El mes debe estar entre 1 y 12, y el anio debe estar entre 2000 y el anio actual mas uno (para poder cargar el proximo periodo con antelacion). Nunca puede haber dos sueldos para la misma combinacion usuario/anio/mes.
+
 | Metodo | Endpoint | Descripcion |
 | :--- | :--- | :--- |
-| `POST` | `/api/sueldos` | Registra o actualiza (upsert) el sueldo de un usuario para un periodo (`mes` y `anio`) y sincroniza su perfil |
+| `POST` | `/api/sueldos` | Crea o actualiza (upsert) el sueldo de un usuario para un periodo (`mes` y `anio`) y sincroniza su perfil. Devuelve 201 si crea un registro nuevo, o 200 si actualiza uno existente |
 | `GET` | `/api/sueldos` | Lista todos los sueldos registrados en el sistema (filtro opcional por query param `usuarioId`) |
-| `PUT` | `/api/sueldos/{id}` | Actualiza monto, periodicidad, tipo de sueldo, mes o anio |
-| `DELETE` | `/api/sueldos/{id}` | Elimina un registro de sueldo |
+| `GET` | `/api/sueldos/{id}` | Obtiene el detalle de un sueldo por su id |
+| `PUT` | `/api/sueldos/{id}` | Actualiza monto, tipo, frecuencia, mes o anio de un sueldo existente (el usuario propietario no se puede reasignar) |
+| `DELETE` | `/api/sueldos/{id}` | Elimina un registro de sueldo (204 sin cuerpo) |
 
 ### 6. Gestion de Gastos
 | Metodo | Endpoint | Descripcion |
