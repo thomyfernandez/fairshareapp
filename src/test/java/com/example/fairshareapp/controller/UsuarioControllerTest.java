@@ -5,6 +5,7 @@ import com.example.fairshareapp.exception.EmailYaRegistradoException;
 import com.example.fairshareapp.exception.GlobalExceptionHandler;
 import com.example.fairshareapp.model.request.LoginRequest;
 import com.example.fairshareapp.model.request.RegistroUsuarioRequest;
+import com.example.fairshareapp.model.response.LoginResponse;
 import com.example.fairshareapp.model.response.UsuarioResponse;
 import com.example.fairshareapp.service.UsuarioService;
 import org.junit.jupiter.api.BeforeEach;
@@ -103,11 +104,12 @@ class UsuarioControllerTest {
     }
 
     /**
-     * Valida el inicio de sesion correcto retornando codigo 200 OK.
+     * Valida el inicio de sesion correcto retornando codigo 200 OK y token JWT.
      */
     @Test
     void login_credencialesValidas_retornaOk() throws Exception {
-        doNothing().when(usuarioService).loginUsuario(any(LoginRequest.class));
+        LoginResponse response = new LoginResponse("mock-jwt-token", "carlos@example.com", "Carlos", "Perez");
+        when(usuarioService.loginUsuario(any(LoginRequest.class))).thenReturn(response);
 
         String json = """
                 {
@@ -120,7 +122,7 @@ class UsuarioControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
                 .andExpect(status().isOk())
-                .andExpect(content().string("OK"));
+                .andExpect(jsonPath("$.token").value("mock-jwt-token"));
     }
 
     /**

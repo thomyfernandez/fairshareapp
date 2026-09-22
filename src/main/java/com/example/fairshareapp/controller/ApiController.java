@@ -1,29 +1,43 @@
 package com.example.fairshareapp.controller;
 
+import com.example.fairshareapp.model.response.EstadoApiResponse;
+import com.example.fairshareapp.model.response.MensajeResponse;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.HashMap;
-import java.util.Map;
-
+/**
+ * Controlador REST con endpoints basicos de diagnostico del servicio.
+ */
 @RestController
 @RequestMapping("/api")
 public class ApiController {
 
+    private static final String NOMBRE_SERVICIO = "FairShare Backend API";
+
+    /**
+     * Retorna el estado del servicio y la marca de tiempo actual.
+     *
+     * @return ResponseEntity con el EstadoApiResponse y codigo HTTP 200 OK.
+     */
     @GetMapping("/status")
-    public Map<String, Object> getStatus() {
-        Map<String, Object> response = new HashMap<>();
-        response.put("status", "UP");
-        response.put("service", "FairShare Backend API");
-        response.put("timestamp", System.currentTimeMillis());
-        return response;
+    public ResponseEntity<EstadoApiResponse> getStatus() {
+        EstadoApiResponse response = EstadoApiResponse.builder()
+                .status("UP")
+                .service(NOMBRE_SERVICIO)
+                .timestamp(System.currentTimeMillis())
+                .build();
+        return ResponseEntity.ok(response);
     }
 
+    /**
+     * Retorna un mensaje de confirmacion de conexion con el backend.
+     *
+     * @return ResponseEntity con el MensajeResponse y codigo HTTP 200 OK.
+     */
     @GetMapping("/hello")
-    public Map<String, String> getHello() {
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "¡Conexión exitosa desde el Backend de Spring Boot!");
-        return response;
+    public ResponseEntity<MensajeResponse> getHello() {
+        return ResponseEntity.ok(new MensajeResponse("¡Conexión exitosa desde el Backend de Spring Boot!"));
     }
 }
