@@ -155,6 +155,10 @@ public class GastoService {
                 throw new ReglaInvalidaException("La fecha desde no puede ser posterior a la fecha hasta");
             }
             gastos = gastoRepository.findByEspacioIdAndFechaBetweenOrderByFechaDesc(espacioId, fechaDesde, fechaHasta);
+        } else if (fechaDesde != null) {
+            gastos = gastoRepository.findByEspacioIdAndFechaGreaterThanEqualOrderByFechaDesc(espacioId, fechaDesde);
+        } else if (fechaHasta != null) {
+            gastos = gastoRepository.findByEspacioIdAndFechaLessThanEqualOrderByFechaDesc(espacioId, fechaHasta);
         } else {
             gastos = gastoRepository.findByEspacioIdOrderByFechaDesc(espacioId);
         }
