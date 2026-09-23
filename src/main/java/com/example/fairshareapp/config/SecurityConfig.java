@@ -24,6 +24,12 @@ public class SecurityConfig {
             .authorizeHttpRequests(a -> a
                 .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/api/status", "/api/hello", "/error").permitAll()
+                .requestMatchers(
+                    "/v3/api-docs/**",
+                    "/v3/api-docs.yaml",
+                    "/swagger-ui/**",
+                    "/swagger-ui.html"
+                ).permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/usuarios/registro", "/api/v1/usuarios/login", "/api/usuario/registro", "/api/usuario/login").permitAll()
                 .requestMatchers("/api/v1/usuarios/me", "/api/usuario/me").authenticated()
                 .requestMatchers("/api/v1/usuarios", "/api/v1/usuarios/get", "/api/usuario", "/api/usuario/get").hasRole("ADMIN")

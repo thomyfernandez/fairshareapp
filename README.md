@@ -1,93 +1,98 @@
-# FairShare App
+# FairShare API - Backend
 
 ## Descripcion del Proyecto y Alcance
 
-FairShare es una plataforma web para la gestion inteligente y liquidacion transparente de gastos compartidos en grupos de convivencia, viajes, parejas o proyectos laborales.
+FairShare es una API REST desarrollada en Java con Spring Boot para la gestion inteligente y liquidacion transparente de gastos compartidos en grupos de convivencia, viajes, parejas o proyectos laborales.
 El alcance del sistema comprende la administracion de usuarios y espacios compartidos, el registro de ingresos mensuales para el calculo de distribuciones proporcionales por capacidad economica, la imputacion de gastos con multiples reglas de reparto (equitativa, proporcional a ingresos, participacion parcial y personalizada), la simplificacion automatica de deudas cruzadas para minimizar transferencias, el control de vencimientos en plantillas de gastos recurrentes y el cierre de liquidaciones periodicas con validacion de tope presupuestario.
 
 ---
 
 ## Arquitectura del Proyecto
 
-Este proyecto adopta una Arquitectura Monorepo Desacoplada (Decoupled Monorepo):
+El backend de FairShare esta construido siguiendo las directrices de Clean Architecture, principios SOLID y diseno de APIs RESTful:
 
 ```text
 fairshareapp/
-├── frontend/                  # Aplicacion Frontend (React + Vite)
-│   ├── src/                   # Componentes UI, estilos y logica en React
-│   ├── public/                # Recursos estaticos de React
-│   ├── package.json           # Dependencias de npm
-│   └── vite.config.js         # Configuracion de Vite (incluye proxy para /api)
-├── src/                       # Aplicacion Backend (Spring Boot + Java)
+├── src/                       # Codigo fuente de la aplicacion (Spring Boot + Java)
 │   ├── main/
 │   │   ├── java/com/example/fairshareapp/
-│   │   │   ├── config/        # Configuraciones globales (CORS, Seguridad)
-│   │   │   ├── controller/    # Controladores REST API (Api, Usuario, Gasto)
-│   │   │   ├── exception/     # Manejo global de excepciones
-│   │   │   ├── model/         # Entidades JPA y DTOs
+│   │   │   ├── config/        # Configuraciones globales (CORS, Seguridad, DataInitializer)
+│   │   │   ├── controller/    # Controladores REST API (Espacios, Miembros, Gastos, etc.)
+│   │   │   ├── exception/     # Manejo global y centralizado de excepciones
+│   │   │   ├── model/         # Entidades JPA, DTOs y enumeraciones
 │   │   │   ├── repository/    # Repositorios Spring Data JPA
 │   │   │   ├── service/       # Servicios con logica transaccional
 │   │   │   └── FairshareappApplication.java
-│   │   └── resources/         # Archivos de configuracion de Spring Boot
-│   └── test/                  # Pruebas unitarias y de integracion
-├── fairshareapp.postman_collection.json # Coleccion completa para importar en Postman
-├── pom.xml                    # Configuracion de Maven
-└── README.md                  # Documentacion del proyecto
+│   │   └── resources/         # Archivos de configuracion de Spring Boot (application.properties)
+│   └── test/                  # Pruebas unitarias y de integracion de controladores y servicios
+├── fairshareapp.postman_collection.json # Coleccion oficial de Postman para pruebas de API
+├── pom.xml                    # Configuracion de construccion y dependencias Maven
+├── Dockerfile                 # Imagen Docker optimizada del servicio backend
+├── docker-compose.yaml        # Orquestacion del servicio
+└── README.md                  # Documentacion tecnica de la API REST
 ```
 
 ### Principales aspectos arquitectonicos:
-1. **Desacoplamiento Limpio**: El frontend en React se encuentra dentro de su propio directorio `/frontend` con sus propias dependencias y scripts de `npm`.
-2. **Desarrollo Rapido con Proxy (HMR)**: Durante el desarrollo local, Vite ejecuta el servidor de frontend en `http://localhost:5173` y redirige peticiones `/api/*` al servidor Spring Boot en `http://localhost:8080`.
-3. **Division de Gastos Inteligente**: Modulo de calculo de participaciones con multiples reglas (Equitativa, Proporcional a Ingresos, Participacion Parcial y Personalizada).
-4. **Empaquetado Unificado para Produccion**: Con `frontend-maven-plugin` y `maven-resources-plugin`, al ejecutar `mvn clean package` se compila el frontend y se empaqueta en un unico archivo `.jar` ejecutable.
+1. **Seguridad Stateless**: Autenticacion robusta con JWT Bearer y control de acceso basado en roles (`ROLE_USUARIO`, `ROLE_ADMIN`).
+2. **Division de Gastos Inteligente**: Modulo de calculo de participaciones con multiples reglas (Equitativa, Proporcional a Ingresos, Participacion Parcial y Personalizada).
+3. **Simplificacion de Deudas y Liquidaciones**: Algoritmo de compensacion cruzada de deudas para minimizar transferencias y control de presupuesto base con checkout transaccional.
+4. **Manejo Centralizado de Errores**: Controlador de excepciones global con `@RestControllerAdvice` y respuestas de error HTTP estandarizadas.
 
 ---
 
 ## Guia de Ejecucion
 
-### Opcion A: Modo Desarrollo (Recomendado)
+### Opcion A: Modo Desarrollo (Maven)
 
-1. **Iniciar la base de datos (SQL Server en Docker):**
-   ```bash
-   docker compose up -d sqlserver
-   ```
-
-2. **Iniciar el Backend (Spring Boot):**
+1. **Iniciar el Backend:**
    ```bash
    mvn spring-boot:run
    ```
-   *(El backend estara disponible en `http://localhost:8080`)*
+   *(El servicio estara disponible en `http://localhost:8080`)*
 
-3. **Iniciar el Frontend (React):**
-   ```bash
-   cd frontend
-   npm run dev
-   ```
-   *(El frontend estara disponible en `http://localhost:5173`)*
+2. **Verificar conectividad:**
+   Puede comprobarse que el servicio se encuentra activo realizando una peticion GET a:
+   - `http://localhost:8080/api/status`
+   - `http://localhost:8080/api/hello`
 
 ---
 
-### Opcion B: Modo Produccion (Single JAR)
+### Opcion B: Modo Produccion (JAR Ejecutable)
 
 1. **Generar el ejecutable:**
    ```bash
    mvn clean package
    ```
 
-2. **Ejecutar la aplicacion completa:**
+2. **Ejecutar la aplicacion:**
    ```bash
    java -jar target/fairshareapp-0.0.1-SNAPSHOT.jar
    ```
 
-3. Abrir `http://localhost:8080` en el navegador.
+3. El servicio estara disponible en `http://localhost:8080`.
 
 ---
 
-### Opcion C: Entorno Completo con Docker Compose
+### Opcion C: Despliegue con Docker
 
 ```bash
 docker compose up --build
 ```
+
+---
+
+## Documentacion Interactiva de la API (Swagger UI / OpenAPI 3)
+
+La aplicacion expone documentacion interactiva y la especificacion OpenAPI 3 generada automaticamente mediante Springdoc OpenAPI. Permite explorar los contratos, esquemas de peticion y respuesta, y probar los endpoints enviando tokens JWT Bearer:
+
+- **Swagger UI (Interfaz Grafica):** [http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html) (o acceso rapido via [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html))
+- **Especificacion OpenAPI en JSON:** [http://localhost:8080/v3/api-docs](http://localhost:8080/v3/api-docs)
+- **Especificacion OpenAPI en YAML:** [http://localhost:8080/v3/api-docs.yaml](http://localhost:8080/v3/api-docs.yaml)
+
+Para autenticar peticiones en Swagger UI:
+1. Iniciar sesion o registrarse mediante `/api/v1/usuarios/login` o `/api/v1/usuarios/registro`.
+2. Copiar el valor del token devuelto en la respuesta.
+3. Hacer clic en el boton **Authorize** en la parte superior derecha de Swagger UI e ingresar el token Bearer.
 
 ---
 
