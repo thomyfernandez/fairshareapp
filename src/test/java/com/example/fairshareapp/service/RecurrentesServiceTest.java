@@ -407,7 +407,7 @@ class RecurrentesServiceTest {
         assertEquals(1L, enviado.getPagadorId());
         assertEquals(2, enviado.getParticipantes().size());
         List<Long> idsParticipantes = enviado.getParticipantes().stream()
-                .map(com.example.fairshareapp.model.dto.GastoParticipanteDTO::getUsuarioId)
+                .map(p -> p.getUsuarioId())
                 .toList();
         assertTrue(idsParticipantes.containsAll(List.of(1L, 2L)));
     }

@@ -211,7 +211,7 @@ public class SueldoServiceImpl implements SueldoService {
      */
     private void sincronizarSueldoVigente(Usuario usuario) {
         var montoVigente = sueldoRepository.findFirstByUsuario_IdOrderByAnioDescMesDesc(usuario.getId());
-        usuario.setSueldo(montoVigente.map(Sueldo::getMonto).orElse(null));
+        usuario.setSueldo(montoVigente.map(s -> s.getMonto()).orElse(null));
         usuarioRepository.save(usuario);
     }
 }

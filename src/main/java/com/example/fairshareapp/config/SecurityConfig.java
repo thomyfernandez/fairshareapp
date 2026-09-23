@@ -16,8 +16,20 @@ public class SecurityConfig {
         var registration = new FilterRegistrationBean<>(filter);
         registration.setEnabled(false); return registration;
     }
-    @Bean public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwt, SecurityErrorHandler errors) throws Exception {
-        return http.cors(cors -> {}).csrf(csrf -> csrf.disable()) // Bearer explícito; no sesión ni autenticación por cookies.
+    /**
+     * Configura la cadena de filtros de seguridad HTTP, autorizaciones de rutas y politica stateless.
+     * La proteccion CSRF se deshabilita de forma intencional y segura ya que la aplicacion
+     * utiliza exclusivamente autenticacion stateless mediante tokens JWT Bearer sin cookies de sesion.
+     *
+     * @param http configurador de seguridad HTTP
+     * @param jwt filtro de autenticacion JWT
+     * @param errors manejador de excepciones de seguridad
+     * @return cadena de filtros de seguridad construida
+     */
+    @Bean
+    @SuppressWarnings("java:S4502")
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwt, SecurityErrorHandler errors) {
+        return http.cors(cors -> {}).csrf(csrf -> csrf.disable()) // Bearer explicito; no sesion ni cookies.
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .requestCache(c -> c.disable()).formLogin(f -> f.disable()).httpBasic(b -> b.disable()).logout(l -> l.disable())
             .exceptionHandling(e -> e.authenticationEntryPoint(errors).accessDeniedHandler(errors))

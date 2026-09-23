@@ -40,18 +40,18 @@ class EntregaIntegrationTest {
         String email = UUID.randomUUID()+"@example.com";
         var r = call("POST", "/api/v1/usuarios/registro", null,
             Map.of("nombre","Ana","apellido","Prueba","usuario","ana","email",email,"contra","Password123!","rol","ADMIN"),201);
-        assertEquals("USUARIO", r.path("rol").asText()); assertFalse(r.has("contra")); assertFalse(r.has("password"));
+        assertEquals("USUARIO", r.path("rol").textValue()); assertFalse(r.has("contra")); assertFalse(r.has("password"));
         assertTrue(encoder.matches("Password123!", usuarios.findById(r.path("id").asLong()).orElseThrow().getContra()));
         var login = call("POST", "/api/v1/usuarios/login", null, Map.of("email",email,"contra","Password123!"),200);
-        assertEquals("Bearer", login.path("tokenType").asText());
-        return new Cuenta(r.path("id").asLong(), email, login.path("token").asText());
+        assertEquals("Bearer", login.path("tokenType").textValue());
+        return new Cuenta(r.path("id").asLong(), email, login.path("token").textValue());
     }
     JsonNode espacio(Cuenta c) throws Exception {
         return call("POST", "/api/v1/espacios", c.token(), Map.of("nombre","Espacio "+UUID.randomUUID(),
             "tipo","HOGAR","reglaReparto","CINCUENTA_CINCUENTA","presupuestoBase",1000),201);
     }
     void unir(Cuenta c, JsonNode e) throws Exception {
-        call("POST", "/api/v1/espacios/unirse", c.token(), Map.of("usuarioId",c.id(),"codigo",e.path("codigo").asText()),201);
+        call("POST", "/api/v1/espacios/unirse", c.token(), Map.of("usuarioId",c.id(),"codigo",e.path("codigo").textValue()),201);
     }
     Map<String,Object> gasto(Cuenta pagador, Number monto, Cuenta... participantes) {
         return Map.of("descripcion","Compra compartida","monto",monto,"pagadorId",pagador.id(),"regla","EQUITATIVA",
@@ -91,8 +91,8 @@ class EntregaIntegrationTest {
         call("GET",ruta(e,"/miembros"),outsider.token(),null,403);
         call("PATCH",ruta(e,"/presupuesto-base?presupuestoBase=900&solicitanteId="+a.id()),b.token(),null,403);
         call("PATCH",ruta(e,"/presupuesto-base?presupuestoBase=900"),a.token(),null,200);
-        call("POST",ruta(e,"/unirse"),outsider.token(),Map.of("usuarioId",a.id(),"codigo",e.path("codigo").asText()),403);
-        call("POST",ruta(e,"/unirse"),b.token(),Map.of("usuarioId",b.id(),"codigo",e.path("codigo").asText()),409);
+        call("POST",ruta(e,"/unirse"),outsider.token(),Map.of("usuarioId",a.id(),"codigo",e.path("codigo").textValue()),403);
+        call("POST",ruta(e,"/unirse"),b.token(),Map.of("usuarioId",b.id(),"codigo",e.path("codigo").textValue()),409);
         call("PATCH",ruta(e,"/miembros/"+a.id()+"/rol?rol=MIEMBRO"),a.token(),null,409);
         assertEquals(0,call("GET","/api/v1/espacios",outsider.token(),null,200).size());
     }
@@ -160,7 +160,7 @@ class EntregaIntegrationTest {
             "fechaProximaRevision",LocalDate.now().minusDays(1).toString(),"frecuenciaAjusteMeses",1),201);
         String path="/api/v1/favoritos/"+p.path("id").asLong();
         var error=call("POST",path+"/ejecutar",a.token(),null,409);
-        assertEquals("CICLO_VENCIDO",error.path("code").asText());
+        assertEquals("CICLO_VENCIDO",error.path("code").textValue());
         call("PUT",path+"/actualizar-monto",a.token(),Map.of("nuevoMontoBase",120),200);
         assertEquals(2,call("POST",path+"/ejecutar",a.token(),null,201).path("participantes").size());
     }

@@ -74,8 +74,8 @@ public class BalanceService {
             BigDecimal pagado = d.getMontoPagado();
             usuariosPorId.put(d.getDeudor().getId(), d.getDeudor());
             usuariosPorId.put(d.getAcreedor().getId(), d.getAcreedor());
-            saldosNetos.merge(d.getDeudor().getId(), pagado, BigDecimal::add);
-            saldosNetos.merge(d.getAcreedor().getId(), pagado.negate(), BigDecimal::add);
+            saldosNetos.merge(d.getDeudor().getId(), pagado, (a, b) -> a.add(b));
+            saldosNetos.merge(d.getAcreedor().getId(), pagado.negate(), (a, b) -> a.add(b));
         }
         List<Transaccion> transacciones = simplificarTransacciones(saldosNetos);
 

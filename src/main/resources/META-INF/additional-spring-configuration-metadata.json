@@ -1,0 +1,29 @@
+{
+  "properties": [
+    {
+      "name": "jwt.secret",
+      "type": "java.lang.String",
+      "description": "Clave secreta utilizada para la generacion y validacion de tokens JWT."
+    },
+    {
+      "name": "jwt.expiration-ms",
+      "type": "java.lang.Long",
+      "description": "Tiempo de expiracion de los tokens JWT en milisegundos."
+    },
+    {
+      "name": "app.cors-origins",
+      "type": "java.lang.String",
+      "description": "Lista separada por comas de origenes permitidos para la politica de CORS."
+    },
+    {
+      "name": "app.admin.email",
+      "type": "java.lang.String",
+      "description": "Correo electronico del usuario administrador para inicializacion de datos."
+    },
+    {
+      "name": "app.admin.password",
+      "type": "java.lang.String",
+      "description": "Contrasena del usuario administrador para inicializacion de datos."
+    }
+  ]
+}

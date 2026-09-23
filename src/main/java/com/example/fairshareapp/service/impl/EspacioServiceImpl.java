@@ -141,13 +141,6 @@ public class EspacioServiceImpl implements EspacioService {
     }
 
     /**
-     * Actualiza la informacion general de un espacio, permitiendo editar su regla de reparto y presupuesto.
-     *
-     * @param id Identificador unico del espacio a actualizar.
-     * @param updateDTO Datos con las modificaciones a aplicar.
-     * @return EspacioResponseDTO con los datos actualizados.
-     */
-    /**
      * Actualiza la informacion general de un espacio sin validacion de solicitante.
      *
      * @param id Identificador unico del espacio a actualizar.
@@ -293,7 +286,7 @@ public class EspacioServiceImpl implements EspacioService {
     public List<EspacioResponseDTO> listarEspacios() {
         var actual = com.example.fairshareapp.security.UsuarioActual.obtener();
         var espacios = actual == null ? espacioRepository.findAll() : miembroEspacioRepository.findByUsuarioId(actual.getId())
-                .stream().map(com.example.fairshareapp.model.entity.MiembroEspacio::getEspacio).toList();
+                .stream().map(m -> m.getEspacio()).toList();
         return espacios.stream()
                 .map(this::mapToResponseDTO)
                 .toList();
