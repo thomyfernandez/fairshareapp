@@ -21,20 +21,23 @@ public class ProcesarLiquidacionDTO {
      * Lista opcional de identificadores de gastos especificos a incluir en la liquidacion.
      * Si no se provee o esta vacia, se agrupan todos los gastos en estado PENDIENTE del espacio.
      */
-    private List<Long> gastoIds;
+    private List<@jakarta.validation.constraints.NotNull @jakarta.validation.constraints.Positive Long> gastoIds;
 
     /**
      * Mes del periodo de liquidacion (1 a 12). Si no se provee, se toma el mes actual.
      */
+    @jakarta.validation.constraints.Min(1) @jakarta.validation.constraints.Max(12)
     private Integer mes;
 
     /**
      * Anio del periodo de liquidacion. Si no se provee, se toma el anio actual.
      */
+    @jakarta.validation.constraints.Min(2000) @jakarta.validation.constraints.Max(9999)
     private Integer anio;
 
     /**
      * Descripcion o nota aclaratoria del cierre de liquidacion.
      */
+    @jakarta.validation.constraints.Size(max=255)
     private String descripcion;
 }

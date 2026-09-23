@@ -82,6 +82,7 @@ class RecurrentesServiceTest {
      */
     @BeforeEach
     void setUp() {
+        org.mockito.Mockito.lenient().when(miembroEspacioRepository.existsByEspacioIdAndUsuarioId(org.mockito.ArgumentMatchers.anyLong(), org.mockito.ArgumentMatchers.anyLong())).thenReturn(true);
         usuario = Usuario.builder()
                 .id(1L)
                 .nombre("Thomas")
@@ -406,7 +407,7 @@ class RecurrentesServiceTest {
         assertEquals(1L, enviado.getPagadorId());
         assertEquals(2, enviado.getParticipantes().size());
         List<Long> idsParticipantes = enviado.getParticipantes().stream()
-                .map(com.example.fairshareapp.model.dto.GastoParticipanteDTO::getUsuarioId)
+                .map(p -> p.getUsuarioId())
                 .toList();
         assertTrue(idsParticipantes.containsAll(List.of(1L, 2L)));
     }

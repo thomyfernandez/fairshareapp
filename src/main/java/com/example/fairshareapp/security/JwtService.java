@@ -25,8 +25,11 @@ public class JwtService {
     public JwtService(@Value("${jwt.secret}") String secret,
                        @Value("${jwt.expiration-ms:86400000}") long expirationMs) {
         this.signingKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        if (expirationMs < 1000 || expirationMs > 86400000) throw new IllegalArgumentException("jwt.expiration-ms debe estar entre 1000 y 86400000");
         this.expirationMs = expirationMs;
     }
+
+    public long getExpirationMs() { return expirationMs; }
 
     public String generarToken(String email) {
         Date ahora = new Date();
@@ -54,10 +57,12 @@ public class JwtService {
     }
 
     private Claims parseClaims(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(signingKey)
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
+        var jwt = Jwts.parserBuilder().setSigningKey(signingKey).build().parseClaimsJws(token);
+        Claims claims = jwt.getBody();
+        if (!"HS256".equals(jwt.getHeader().getAlgorithm()) || claims.getExpiration() == null
+                || claims.getSubject() == null || claims.getSubject().isBlank()) {
+            throw new JwtException("Token inválido");
+        }
+        return claims;
     }
 }

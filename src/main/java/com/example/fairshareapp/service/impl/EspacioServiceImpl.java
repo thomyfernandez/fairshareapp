@@ -103,6 +103,12 @@ public class EspacioServiceImpl implements EspacioService {
                 .build();
 
         Espacio guardado = espacioRepository.save(espacio);
+        var creador = com.example.fairshareapp.security.UsuarioActual.obtener();
+        if (creador != null) {
+            miembroEspacioRepository.save(com.example.fairshareapp.model.entity.MiembroEspacio.builder()
+                .espacio(guardado).usuario(creador).rol(RolMiembro.ADMIN).build());
+        }
+
         return mapToResponseDTO(guardado);
     }
 
@@ -134,13 +140,6 @@ public class EspacioServiceImpl implements EspacioService {
         return mapToResponseDTO(espacio);
     }
 
-    /**
-     * Actualiza la informacion general de un espacio, permitiendo editar su regla de reparto y presupuesto.
-     *
-     * @param id Identificador unico del espacio a actualizar.
-     * @param updateDTO Datos con las modificaciones a aplicar.
-     * @return EspacioResponseDTO con los datos actualizados.
-     */
     /**
      * Actualiza la informacion general de un espacio sin validacion de solicitante.
      *
@@ -285,7 +284,10 @@ public class EspacioServiceImpl implements EspacioService {
     @Override
     @Transactional(readOnly = true)
     public List<EspacioResponseDTO> listarEspacios() {
-        return espacioRepository.findAll().stream()
+        var actual = com.example.fairshareapp.security.UsuarioActual.obtener();
+        var espacios = actual == null ? espacioRepository.findAll() : miembroEspacioRepository.findByUsuarioId(actual.getId())
+                .stream().map(m -> m.getEspacio()).toList();
+        return espacios.stream()
                 .map(this::mapToResponseDTO)
                 .toList();
     }
@@ -312,6 +314,12 @@ public class EspacioServiceImpl implements EspacioService {
 
         if (!espacioRepository.existsById(id)) {
             throw new RecursoNoEncontradoException(ESPACIO_NO_ENCONTRADO + id);
+        }
+        if (miembroEspacioRepository != null) {
+            var ms = miembroEspacioRepository.findByEspacioId(id);
+            if (ms != null && !ms.isEmpty()) {
+                miembroEspacioRepository.deleteAll(ms);
+            }
         }
         espacioRepository.deleteById(id);
     }

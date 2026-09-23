@@ -34,9 +34,11 @@ public class PlantillaGastoRequestDTO {
 
     @NotNull(message = "El monto base es obligatorio")
     @DecimalMin(value = "0.0", inclusive = true, message = "El monto base no puede ser negativo")
+    @jakarta.validation.constraints.Digits(integer=10, fraction=2, message="Máximo 10 enteros y 2 decimales")
     private BigDecimal montoBase;
 
     @DecimalMin(value = "0.0", inclusive = true, message = "El monto variable no puede ser negativo")
+    @jakarta.validation.constraints.Digits(integer=10, fraction=2, message="Máximo 10 enteros y 2 decimales")
     private BigDecimal montoVariable;
 
     @NotNull(message = "La fecha de proxima revision del ciclo es obligatoria")

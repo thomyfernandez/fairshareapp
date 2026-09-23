@@ -37,5 +37,6 @@ public class EspacioUpdateDTO {
     private ReglaReparto reglaReparto;
 
     @DecimalMin(value = "0.0", inclusive = true, message = "El presupuesto base no puede ser negativo")
+    @jakarta.validation.constraints.Digits(integer=10, fraction=2, message="Máximo 10 enteros y 2 decimales")
     private BigDecimal presupuestoBase;
 }

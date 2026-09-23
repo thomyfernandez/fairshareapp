@@ -21,7 +21,6 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -59,6 +58,10 @@ public class RecurrentesService {
         Usuario pagador = usuarioRepository.findById(dto.getPagadorId())
                 .orElseThrow(() -> new RecursoNoEncontradoException("Pagador no encontrado con id: " + dto.getPagadorId()));
 
+        if (!miembroEspacioRepository.existsByEspacioIdAndUsuarioId(espacio.getId(), pagador.getId()))
+            throw new ReglaInvalidaException("El pagador debe pertenecer al espacio");
+        if (dto.getReglaDivision() == ReglaDivision.PERSONALIZADA)
+            throw new ReglaInvalidaException("Las plantillas admiten reparto equitativo, parcial o proporcional; el personalizado requiere cuotas por gasto");
         Categoria categoria = null;
         if (dto.getCategoriaId() != null) {
             categoria = categoriaRepository.findById(dto.getCategoriaId())
@@ -190,6 +193,10 @@ public class RecurrentesService {
         PlantillaGastoRecurrente plantilla = plantillaRepository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException(PLANTILLA_NO_ENCONTRADA + id));
 
+        if (dto.getNuevaFechaProximaRevision() != null && !dto.getNuevaFechaProximaRevision().isAfter(LocalDate.now()))
+            throw new ReglaInvalidaException("La nueva revisión debe ser posterior a hoy");
+        if (dto.getNuevaFechaProximaRevision() == null && (plantilla.getFrecuenciaAjusteMeses() == null || plantilla.getFrecuenciaAjusteMeses() < 1))
+            throw new ReglaInvalidaException("Indique la nueva fecha de revisión o configure una frecuencia");
         plantilla.setMontoBase(dto.getNuevoMontoBase());
         if (dto.getNuevoMontoVariable() != null) {
             plantilla.setMontoVariable(dto.getNuevoMontoVariable());

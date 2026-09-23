@@ -39,6 +39,8 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Gasto {
+    @jakarta.persistence.Version
+    private Long version;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

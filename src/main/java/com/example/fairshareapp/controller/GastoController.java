@@ -46,6 +46,7 @@ public class GastoController {
      * @return Detalle del gasto creado con codigo HTTP 201 Created.
      */
     @PostMapping("/espacios/{id}/gastos")
+    @org.springframework.security.access.prepost.PreAuthorize("@acceso.miembro(#id)")
     public ResponseEntity<GastoDetalleDTO> registrarGasto(@PathVariable Long id,
                                                           @Valid @RequestBody CrearGastoDTO dto) {
         GastoDetalleDTO gastoCreado = gastoService.registrarGasto(id, dto);
@@ -60,6 +61,7 @@ public class GastoController {
      * @return Lista de gastos registrados con codigo HTTP 201 Created.
      */
     @PostMapping("/espacios/{id}/gastos/lote")
+    @org.springframework.security.access.prepost.PreAuthorize("@acceso.miembro(#id)")
     public ResponseEntity<List<GastoDetalleDTO>> registrarLoteGastos(@PathVariable Long id,
                                                                      @Valid @RequestBody List<@Valid CrearGastoDTO> dtos) {
         List<GastoDetalleDTO> gastosCreados = gastoService.registrarLoteGastos(id, dtos);
@@ -75,6 +77,7 @@ public class GastoController {
      * @return Lista de gastos del espacio o del lote filtrado con codigo HTTP 200 OK.
      */
     @GetMapping("/espacios/{id}/gastos")
+    @org.springframework.security.access.prepost.PreAuthorize("@acceso.miembro(#id)")
     public ResponseEntity<List<GastoDetalleDTO>> obtenerGastosPorEspacio(
             @PathVariable Long id,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
@@ -90,6 +93,7 @@ public class GastoController {
      * @return Detalle del gasto con codigo HTTP 200 OK.
      */
     @GetMapping("/gastos/{id}")
+    @org.springframework.security.access.prepost.PreAuthorize("@acceso.gasto(#id)")
     public ResponseEntity<GastoDetalleDTO> obtenerGastoPorId(@PathVariable Long id) {
         GastoDetalleDTO gasto = gastoService.obtenerGastoPorId(id);
         return ResponseEntity.ok(gasto);
@@ -102,6 +106,7 @@ public class GastoController {
      * @return Respuesta vacia con codigo HTTP 204 No Content.
      */
     @DeleteMapping("/gastos/{id}")
+    @org.springframework.security.access.prepost.PreAuthorize("@acceso.eliminarGasto(#id)")
     public ResponseEntity<Void> eliminarGasto(@PathVariable Long id) {
         gastoService.eliminarGasto(id);
         return ResponseEntity.noContent().build();

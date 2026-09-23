@@ -62,11 +62,19 @@ public class LiquidacionServiceImpl implements LiquidacionService {
         Espacio espacio = espacioRepository.findById(espacioId)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Espacio no encontrado con id: " + espacioId));
 
+        if (dto != null && ((dto.getMes() != null && (dto.getMes() < 1 || dto.getMes() > 12))
+                || (dto.getAnio() != null && (dto.getAnio() < 2000 || dto.getAnio() > 9999))))
+            throw new ReglaInvalidaException("Período inválido");
         List<Gasto> gastosALiquidar;
         if (dto != null && dto.getGastoIds() != null && !dto.getGastoIds().isEmpty()) {
-            gastosALiquidar = gastoRepository.findByIdInAndEspacioId(dto.getGastoIds(), espacioId).stream()
-                    .filter(g -> g.getEstado() == EstadoGasto.PENDIENTE)
-                    .toList();
+            if (dto.getGastoIds().stream().anyMatch(id -> id == null || id <= 0)
+                    || new java.util.HashSet<>(dto.getGastoIds()).size() != dto.getGastoIds().size())
+                throw new ReglaInvalidaException("Los IDs de gastos deben ser válidos y no repetirse");
+            gastosALiquidar = gastoRepository.findByIdInAndEspacioId(dto.getGastoIds(), espacioId);
+            if (gastosALiquidar.size() != dto.getGastoIds().size())
+                throw new ReglaInvalidaException("Todos los gastos deben existir y pertenecer al espacio");
+            if (gastosALiquidar.stream().anyMatch(g -> g.getEstado() != EstadoGasto.PENDIENTE))
+                throw new com.example.fairshareapp.exception.ConflictoException("Uno o más gastos ya fueron liquidados");
         } else {
             gastosALiquidar = gastoRepository.findByEspacioIdAndEstadoOrderByFechaAsc(espacioId, EstadoGasto.PENDIENTE);
         }
@@ -157,9 +165,18 @@ public class LiquidacionServiceImpl implements LiquidacionService {
             throw new RecursoNoEncontradoException("Espacio no encontrado con id: " + espacioId);
         }
 
+        if ((desde != null || hasta != null) && (anio != null || mes != null))
+            throw new ReglaInvalidaException("Use fechas o período, no ambos filtros");
+        if (desde != null && hasta != null && desde.isAfter(hasta)) throw new ReglaInvalidaException("Rango de fechas invertido");
+        if ((anio == null) != (mes == null) || (mes != null && (mes < 1 || mes > 12)) || (anio != null && (anio < 2000 || anio > 9999)))
+            throw new ReglaInvalidaException("Indique año y mes válidos juntos");
         List<Liquidacion> liquidaciones;
         if (desde != null && hasta != null) {
             liquidaciones = liquidacionRepository.findByEspacio_IdAndFechaLiquidacionBetweenOrderByFechaLiquidacionDesc(espacioId, desde, hasta);
+        } else if (desde != null) {
+            liquidaciones = liquidacionRepository.findByEspacio_IdAndFechaLiquidacionGreaterThanEqualOrderByFechaLiquidacionDesc(espacioId, desde);
+        } else if (hasta != null) {
+            liquidaciones = liquidacionRepository.findByEspacio_IdAndFechaLiquidacionLessThanEqualOrderByFechaLiquidacionDesc(espacioId, hasta);
         } else if (anio != null && mes != null) {
             liquidaciones = liquidacionRepository.findByEspacio_IdAndAnioAndMesOrderByFechaLiquidacionDesc(espacioId, anio, mes);
         } else {

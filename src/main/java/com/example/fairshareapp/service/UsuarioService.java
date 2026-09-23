@@ -9,7 +9,7 @@ import java.util.List;
 
 public interface UsuarioService {
 
-    void registrarUsuario(RegistroUsuarioRequest request);
+    UsuarioResponse registrarUsuario(RegistroUsuarioRequest request);
     LoginResponse loginUsuario(LoginRequest request);
     List<UsuarioResponse> getAllUsuarios();
 }
