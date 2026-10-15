@@ -1,44 +1,85 @@
 package com.example.fairshareapp.config;
 
-import org.springframework.beans.factory.BeanInitializationException;
+import com.example.fairshareapp.security.JwtAuthenticationFilter;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
+import java.util.Collections;
 
 /**
- * Configuracion de seguridad web para autorizacion de endpoints REST.
+ * Configuracion de seguridad web para autorizacion de endpoints REST y CORS.
  */
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
 
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .csrf(csrf -> csrf.disable())
+            .sessionManagement(session -> session
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            )
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                .requestMatchers("/api/v1/usuarios/**").permitAll()
+                .requestMatchers("/api/v1/espacios/**").authenticated()
+                .requestMatchers("/api/v1/gastos/**").authenticated()
+                .requestMatchers("/api/v1/sueldos/**").authenticated()
+                .requestMatchers("/api/v1/deudas/**").authenticated()
+                .requestMatchers("/api/v1/favoritos/**").authenticated()
+                .anyRequest().authenticated()
+            )
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
+    }
+
     /**
-     * Configura la cadena de filtros de seguridad HTTP.
-     * Se deshabilita CSRF debido a que la API esta disenada como un servicio REST sin estado (stateless),
-     * donde la autenticacion no se basa en cookies de sesion del navegador.
-     *
-     * @param http Configurador de seguridad HTTP.
-     * @return Cadena de filtros de seguridad construida.
+     * Configuracion global de CORS para permitir la conexion desde el frontend (React/Vite).
      */
     @Bean
-    @SuppressWarnings("java:S4502")
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) {
-        try {
-            http
-                // Deshabilitado de forma segura ya que el servicio opera de manera stateless
-                .csrf(csrf -> csrf.disable())
-                .sessionManagement(session -> session
-                    .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
-                .authorizeHttpRequests(auth -> auth
-                    .anyRequest().permitAll()
-                );
-            return http.build();
-        } catch (Exception e) {
-            throw new BeanInitializationException("Error al configurar la cadena de filtros de seguridad", e);
-        }
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+
+        configuration.setAllowedOrigins(Arrays.asList(
+            "http://localhost:5173",
+            "http://127.0.0.1:5173",
+            "http://localhost:3000"
+        ));
+
+        configuration.setAllowedMethods(Arrays.asList(
+            "GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"
+        ));
+
+        configuration.setAllowedHeaders(Collections.singletonList("*"));
+        configuration.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+
+        return source;
     }
 }
