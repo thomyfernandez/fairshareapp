@@ -1,51 +1,84 @@
 package com.example.fairshareapp.config;
+
+import com.example.fairshareapp.security.JwtAuthenticationFilter;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import com.example.fairshareapp.security.*;
 import org.springframework.context.annotation.*;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.boot.web.servlet.FilterRegistrationBean;
-@Configuration @EnableMethodSecurity
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
+import java.util.Collections;
+
+/**
+ * Configuracion de seguridad web para autorizacion de endpoints REST y CORS.
+ */
+@Configuration
+@EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
-    @Bean public PasswordEncoder passwordEncoder() { return new BCryptPasswordEncoder(); }
-    @Bean public FilterRegistrationBean<JwtAuthenticationFilter> jwtRegistration(JwtAuthenticationFilter filter) {
-        var registration = new FilterRegistrationBean<>(filter);
-        registration.setEnabled(false); return registration;
+
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers("/api/v1/usuarios/**").permitAll()
+                        .requestMatchers("/api/v1/espacios/**").authenticated()
+                        .requestMatchers("/api/v1/gastos/**").authenticated()
+                        .requestMatchers("/api/v1/sueldos/**").authenticated()
+                        .requestMatchers("/api/v1/deudas/**").authenticated()
+                        .requestMatchers("/api/v1/favoritos/**").authenticated()
+                        .anyRequest().authenticated())
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
+    }
+
     /**
-     * Configura la cadena de filtros de seguridad HTTP, autorizaciones de rutas y politica stateless.
-     * La proteccion CSRF se deshabilita de forma intencional y segura ya que la aplicacion
-     * utiliza exclusivamente autenticacion stateless mediante tokens JWT Bearer sin cookies de sesion.
-     *
-     * @param http configurador de seguridad HTTP
-     * @param jwt filtro de autenticacion JWT
-     * @param errors manejador de excepciones de seguridad
-     * @return cadena de filtros de seguridad construida
+     * Configuracion global de CORS para permitir la conexion desde el frontend
+     * (React/Vite).
      */
     @Bean
-    @SuppressWarnings("java:S4502")
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwt, SecurityErrorHandler errors) {
-        return http.cors(cors -> {}).csrf(csrf -> csrf.disable()) // Bearer explicito; no sesion ni cookies.
-            .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .requestCache(c -> c.disable()).formLogin(f -> f.disable()).httpBasic(b -> b.disable()).logout(l -> l.disable())
-            .exceptionHandling(e -> e.authenticationEntryPoint(errors).accessDeniedHandler(errors))
-            .authorizeHttpRequests(a -> a
-                .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
-                .requestMatchers("/api/status", "/api/hello", "/error").permitAll()
-                .requestMatchers(
-                    "/v3/api-docs/**",
-                    "/v3/api-docs.yaml",
-                    "/swagger-ui/**",
-                    "/swagger-ui.html"
-                ).permitAll()
-                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/usuarios/registro", "/api/v1/usuarios/login", "/api/usuario/registro", "/api/usuario/login").permitAll()
-                .requestMatchers("/api/v1/usuarios/me", "/api/usuario/me").authenticated()
-                .requestMatchers("/api/v1/usuarios", "/api/v1/usuarios/get", "/api/usuario", "/api/usuario/get").hasRole("ADMIN")
-                .anyRequest().authenticated())
-            .addFilterBefore(jwt, UsernamePasswordAuthenticationFilter.class).build();
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+
+        configuration.setAllowedOrigins(Arrays.asList(
+                "http://localhost:5173",
+                "http://127.0.0.1:5173",
+                "http://localhost:3000"));
+
+        configuration.setAllowedMethods(Arrays.asList(
+                "GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"));
+
+        configuration.setAllowedHeaders(Collections.singletonList("*"));
+        configuration.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+
+        return source;
     }
 }
