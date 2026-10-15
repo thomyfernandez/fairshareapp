@@ -5,6 +5,7 @@ import com.example.fairshareapp.exception.EmailYaRegistradoException;
 import com.example.fairshareapp.exception.GlobalExceptionHandler;
 import com.example.fairshareapp.model.request.LoginRequest;
 import com.example.fairshareapp.model.request.RegistroUsuarioRequest;
+import com.example.fairshareapp.model.response.LoginResponse;
 import com.example.fairshareapp.model.response.UsuarioResponse;
 import com.example.fairshareapp.service.UsuarioService;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,12 +21,10 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -59,7 +58,7 @@ class UsuarioControllerTest {
      */
     @Test
     void registro_payloadValido_retornaCreated() throws Exception {
-        doNothing().when(usuarioService).registrarUsuario(any(RegistroUsuarioRequest.class));
+        when(usuarioService.registrarUsuario(any(RegistroUsuarioRequest.class))).thenReturn(new UsuarioResponse(1L, "clopez", "carlos@example.com", "Carlos", "Lopez", "USUARIO"));
 
         String json = """
                 {
@@ -75,7 +74,7 @@ class UsuarioControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
                 .andExpect(status().isCreated())
-                .andExpect(content().string("OK"));
+                .andExpect(jsonPath("$.id").value(1)).andExpect(jsonPath("$.contra").doesNotExist());
     }
 
     /**
@@ -103,11 +102,12 @@ class UsuarioControllerTest {
     }
 
     /**
-     * Valida el inicio de sesion correcto retornando codigo 200 OK.
+     * Valida el inicio de sesion correcto retornando codigo 200 OK y token JWT.
      */
     @Test
     void login_credencialesValidas_retornaOk() throws Exception {
-        doNothing().when(usuarioService).loginUsuario(any(LoginRequest.class));
+        LoginResponse response = new LoginResponse("mock-jwt-token", "carlos@example.com", "Carlos", "Perez");
+        when(usuarioService.loginUsuario(any(LoginRequest.class))).thenReturn(response);
 
         String json = """
                 {
@@ -120,7 +120,7 @@ class UsuarioControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
                 .andExpect(status().isOk())
-                .andExpect(content().string("OK"));
+                .andExpect(jsonPath("$.token").value("mock-jwt-token"));
     }
 
     /**

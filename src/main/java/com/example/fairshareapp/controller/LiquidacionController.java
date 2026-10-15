@@ -39,9 +39,10 @@ public class LiquidacionController {
      * @return ResponseEntity con el detalle y resumen cuantitativo de la liquidacion y codigo HTTP 201 Created.
      */
     @PostMapping("/cierre")
+    @org.springframework.security.access.prepost.PreAuthorize("@acceso.admin(#espacioId)")
     public ResponseEntity<LiquidacionResponseDTO> procesarCierre(
             @PathVariable("id") Long espacioId,
-            @RequestBody(required = false) ProcesarLiquidacionDTO dto) {
+            @jakarta.validation.Valid @RequestBody(required = false) ProcesarLiquidacionDTO dto) {
         ProcesarLiquidacionDTO body = dto != null ? dto : new ProcesarLiquidacionDTO();
         LiquidacionResponseDTO response = liquidacionService.procesarCierreLiquidacion(espacioId, body);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -58,6 +59,7 @@ public class LiquidacionController {
      * @return ResponseEntity con la lista de liquidaciones historicas y codigo HTTP 200 OK.
      */
     @GetMapping("/historial")
+    @org.springframework.security.access.prepost.PreAuthorize("@acceso.miembro(#espacioId)")
     public ResponseEntity<List<LiquidacionResponseDTO>> obtenerHistorial(
             @PathVariable("id") Long espacioId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,

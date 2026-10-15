@@ -32,6 +32,7 @@ public class GastoParticipanteDTO {
     private String usuarioEmail;
 
     @DecimalMin(value = "0.0", inclusive = true, message = "El importe no puede ser negativo")
+    @jakarta.validation.constraints.Digits(integer=10, fraction=2, message="Máximo 10 enteros y 2 decimales")
     private BigDecimal importe;
 
     @DecimalMin(value = "0.0", inclusive = true, message = "El porcentaje no puede ser negativo")
@@ -39,5 +40,6 @@ public class GastoParticipanteDTO {
     private BigDecimal porcentaje;
 
     @DecimalMin(value = "0.0", inclusive = true, message = "El sueldo no puede ser negativo")
+    @jakarta.validation.constraints.Digits(integer=10, fraction=2, message="Máximo 10 enteros y 2 decimales")
     private BigDecimal sueldo;
 }

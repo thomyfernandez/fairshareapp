@@ -41,4 +41,6 @@ public interface LiquidacionRepository extends JpaRepository<Liquidacion, Long> 
      * @return Lista de liquidaciones para dicho mes y anio.
      */
     List<Liquidacion> findByEspacio_IdAndAnioAndMesOrderByFechaLiquidacionDesc(Long espacioId, Integer anio, Integer mes);
+    List<Liquidacion> findByEspacio_IdAndFechaLiquidacionGreaterThanEqualOrderByFechaLiquidacionDesc(Long espacioId, LocalDate desde);
+    List<Liquidacion> findByEspacio_IdAndFechaLiquidacionLessThanEqualOrderByFechaLiquidacionDesc(Long espacioId, LocalDate hasta);
 }

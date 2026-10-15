@@ -1,10 +1,13 @@
 package com.example.fairshareapp.controller;
 
+import com.example.fairshareapp.exception.CicloVencidoException;
 import com.example.fairshareapp.exception.GlobalExceptionHandler;
+import com.example.fairshareapp.exception.RecursoNoEncontradoException;
 import com.example.fairshareapp.exception.ReglaInvalidaException;
 import com.example.fairshareapp.model.dto.ActualizarPrecioCicloDTO;
 import com.example.fairshareapp.model.dto.GastoDetalleDTO;
-import com.example.fairshareapp.model.dto.PlantillaGastoDTO;
+import com.example.fairshareapp.model.dto.PlantillaGastoRequestDTO;
+import com.example.fairshareapp.model.dto.PlantillaGastoResponseDTO;
 import com.example.fairshareapp.model.dto.ServicioVencimientoDTO;
 import com.example.fairshareapp.service.RecurrentesService;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,6 +27,7 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -62,14 +66,14 @@ class RecurrenteControllerTest {
      */
     @Test
     void crearFavorito_valido_retornaCreated() throws Exception {
-        PlantillaGastoDTO response = PlantillaGastoDTO.builder()
+        PlantillaGastoResponseDTO response = PlantillaGastoResponseDTO.builder()
                 .id(1L)
                 .nombre("Alquiler")
                 .espacioId(1L)
                 .montoBase(BigDecimal.valueOf(250000.00))
                 .build();
 
-        when(recurrentesService.guardarFavorito(any(PlantillaGastoDTO.class))).thenReturn(response);
+        when(recurrentesService.guardarFavorito(any(PlantillaGastoRequestDTO.class))).thenReturn(response);
 
         String json = """
                 {
@@ -77,7 +81,8 @@ class RecurrenteControllerTest {
                     "frecuenciaAjusteMeses": 3,
                     "montoBase": 250000.00,
                     "montoVariable": 0.00,
-                    "fechaProximaRevision": "2026-11-01"
+                    "fechaProximaRevision": "2026-11-01",
+                    "pagadorId": 5
                 }
                 """;
 
@@ -90,18 +95,40 @@ class RecurrenteControllerTest {
     }
 
     /**
+     * Valida que si el espacioId del cuerpo no coincide con el de la ruta, se rechace con 400 Bad Request
+     * en lugar de sobreescribirlo silenciosamente.
+     */
+    @Test
+    void crearFavorito_espacioIdDelCuerpoNoCoincideConRuta_retornaBadRequest() throws Exception {
+        String json = """
+                {
+                    "nombre": "Alquiler",
+                    "montoBase": 250000.00,
+                    "fechaProximaRevision": "2026-11-01",
+                    "pagadorId": 5,
+                    "espacioId": 99
+                }
+                """;
+
+        mockMvc.perform(post("/api/v1/espacios/1/favoritos")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(status().isBadRequest());
+    }
+
+    /**
      * Valida la obtencion de la lista de favoritos de un espacio con codigo 200 OK.
      */
     @Test
     void obtenerFavoritos_retornaOk() throws Exception {
-        PlantillaGastoDTO item = PlantillaGastoDTO.builder()
+        PlantillaGastoResponseDTO item = PlantillaGastoResponseDTO.builder()
                 .id(1L)
                 .nombre("Internet")
                 .espacioId(1L)
                 .vencido(false)
                 .build();
 
-        when(recurrentesService.obtenerFavoritosPorEspacio(1L)).thenReturn(List.of(item));
+        when(recurrentesService.obtenerFavoritosPorEspacio(1L, false)).thenReturn(List.of(item));
 
         mockMvc.perform(get("/api/v1/espacios/1/favoritos"))
                 .andExpect(status().isOk())
@@ -110,30 +137,26 @@ class RecurrenteControllerTest {
     }
 
     /**
-     * Valida el filtrado de plantillas favoritas vencidas mediante el parametro soloVencidos.
+     * Valida que el filtro soloVencidos se delegue al service, que resuelve el filtro por query.
      */
     @Test
-    void obtenerFavoritos_conFiltroSoloVencidos_retornaSoloVencidos() throws Exception {
-        PlantillaGastoDTO itemVigente = PlantillaGastoDTO.builder()
-                .id(1L)
-                .nombre("Internet")
-                .espacioId(1L)
-                .vencido(false)
-                .build();
-        PlantillaGastoDTO itemVencido = PlantillaGastoDTO.builder()
+    void obtenerFavoritos_conFiltroSoloVencidos_delegaFiltroAlService() throws Exception {
+        PlantillaGastoResponseDTO itemVencido = PlantillaGastoResponseDTO.builder()
                 .id(2L)
                 .nombre("Alquiler")
                 .espacioId(1L)
                 .vencido(true)
                 .build();
 
-        when(recurrentesService.obtenerFavoritosPorEspacio(1L)).thenReturn(List.of(itemVigente, itemVencido));
+        when(recurrentesService.obtenerFavoritosPorEspacio(1L, true)).thenReturn(List.of(itemVencido));
 
         mockMvc.perform(get("/api/v1/espacios/1/favoritos?soloVencidos=true"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].id").value(2L))
                 .andExpect(jsonPath("$[0].nombre").value("Alquiler"));
+
+        verify(recurrentesService).obtenerFavoritosPorEspacio(eq(1L), eq(true));
     }
 
     /**
@@ -176,12 +199,36 @@ class RecurrenteControllerTest {
     }
 
     /**
-     * Valida que si la tarifa de ciclo esta vencida, la ejecucion se bloquee con 400 Bad Request.
+     * Valida que si el ciclo esta vencido, la ejecucion se bloquee con 409 Conflict.
      */
     @Test
-    void ejecutarGasto_conTarifaVencida_retornaBadRequest() throws Exception {
+    void ejecutarGasto_conCicloVencido_retornaConflict() throws Exception {
         when(recurrentesService.ejecutarGastoDesdePlantilla(1L))
-                .thenThrow(new ReglaInvalidaException("Debe actualizar la tarifa antes de ejecutar el gasto"));
+                .thenThrow(new CicloVencidoException("Alquiler", LocalDate.now().minusDays(1)));
+
+        mockMvc.perform(post("/api/v1/favoritos/1/ejecutar"))
+                .andExpect(status().isConflict());
+    }
+
+    /**
+     * Valida que ejecutar una plantilla inexistente devuelva 404 Not Found.
+     */
+    @Test
+    void ejecutarGasto_plantillaInexistente_retornaNotFound() throws Exception {
+        when(recurrentesService.ejecutarGastoDesdePlantilla(99L))
+                .thenThrow(new RecursoNoEncontradoException("Plantilla favorita no encontrada con id: 99"));
+
+        mockMvc.perform(post("/api/v1/favoritos/99/ejecutar"))
+                .andExpect(status().isNotFound());
+    }
+
+    /**
+     * Valida que si el pagador o los participantes no pertenecen al espacio, se informe con 400 Bad Request.
+     */
+    @Test
+    void ejecutarGasto_pagadorNoPerteneceAlEspacio_retornaBadRequest() throws Exception {
+        when(recurrentesService.ejecutarGastoDesdePlantilla(1L))
+                .thenThrow(new ReglaInvalidaException("El pagador configurado en la plantilla ya no pertenece al espacio"));
 
         mockMvc.perform(post("/api/v1/favoritos/1/ejecutar"))
                 .andExpect(status().isBadRequest());
@@ -192,7 +239,7 @@ class RecurrenteControllerTest {
      */
     @Test
     void actualizarMonto_retornaOk() throws Exception {
-        PlantillaGastoDTO response = PlantillaGastoDTO.builder()
+        PlantillaGastoResponseDTO response = PlantillaGastoResponseDTO.builder()
                 .id(1L)
                 .nombre("Alquiler")
                 .montoBase(BigDecimal.valueOf(300000.00))
@@ -216,6 +263,26 @@ class RecurrenteControllerTest {
     }
 
     /**
+     * Valida que actualizar el monto de una plantilla inexistente devuelva 404 Not Found.
+     */
+    @Test
+    void actualizarMonto_plantillaInexistente_retornaNotFound() throws Exception {
+        when(recurrentesService.actualizarMonto(eq(99L), any(ActualizarPrecioCicloDTO.class)))
+                .thenThrow(new RecursoNoEncontradoException("Plantilla favorita no encontrada con id: 99"));
+
+        String json = """
+                {
+                    "nuevoMontoBase": 1000.00
+                }
+                """;
+
+        mockMvc.perform(put("/api/v1/favoritos/99/actualizar-monto")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(status().isNotFound());
+    }
+
+    /**
      * Valida la eliminacion de un favorito con codigo 204 No Content.
      */
     @Test
@@ -227,6 +294,18 @@ class RecurrenteControllerTest {
     }
 
     /**
+     * Valida que eliminar una plantilla inexistente devuelva 404 Not Found.
+     */
+    @Test
+    void eliminarFavorito_plantillaInexistente_retornaNotFound() throws Exception {
+        org.mockito.Mockito.doThrow(new RecursoNoEncontradoException("Plantilla favorita no encontrada con id: 99"))
+                .when(recurrentesService).eliminarFavorito(99L);
+
+        mockMvc.perform(delete("/api/v1/favoritos/99"))
+                .andExpect(status().isNotFound());
+    }
+
+    /**
      * Valida que crear un favorito con nombre vacio retorne codigo 400 Bad Request por validacion.
      */
     @Test
@@ -234,7 +313,29 @@ class RecurrenteControllerTest {
         String json = """
                 {
                     "nombre": "",
-                    "montoBase": 1000.00
+                    "montoBase": 1000.00,
+                    "fechaProximaRevision": "2026-11-01",
+                    "pagadorId": 5
+                }
+                """;
+
+        mockMvc.perform(post("/api/v1/espacios/1/favoritos")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(status().isBadRequest());
+    }
+
+    /**
+     * Valida que crear un favorito con monto base negativo retorne codigo 400 Bad Request por validacion.
+     */
+    @Test
+    void crearFavorito_montoBaseNegativo_retornaBadRequest() throws Exception {
+        String json = """
+                {
+                    "nombre": "Alquiler",
+                    "montoBase": -100.00,
+                    "fechaProximaRevision": "2026-11-01",
+                    "pagadorId": 5
                 }
                 """;
 

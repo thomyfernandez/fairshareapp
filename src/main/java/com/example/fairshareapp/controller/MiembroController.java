@@ -48,6 +48,7 @@ public class MiembroController {
      * @return ResponseEntity con el MiembroResponseDTO creado y codigo HTTP 201 Created.
      */
     @PostMapping("/{id}/unirse")
+    @org.springframework.security.access.prepost.PreAuthorize("@acceso.propio(#unirseDTO.usuarioId)")
     public ResponseEntity<MiembroResponseDTO> unirseAEspacio(@PathVariable Long id,
                                                              @Valid @RequestBody UnirseEspacioDTO unirseDTO) {
         MiembroResponseDTO response = miembroService.unirseAEspacio(id, unirseDTO);
@@ -61,6 +62,7 @@ public class MiembroController {
      * @return ResponseEntity con el MiembroResponseDTO creado y codigo HTTP 201 Created.
      */
     @PostMapping("/unirse")
+    @org.springframework.security.access.prepost.PreAuthorize("@acceso.propio(#unirseDTO.usuarioId)")
     public ResponseEntity<MiembroResponseDTO> unirsePorCodigo(@Valid @RequestBody UnirseEspacioDTO unirseDTO) {
         MiembroResponseDTO response = miembroService.unirsePorCodigo(unirseDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -73,6 +75,7 @@ public class MiembroController {
      * @return ResponseEntity con la lista de MiembroResponseDTO y codigo HTTP 200 OK.
      */
     @GetMapping("/{id}/miembros")
+    @org.springframework.security.access.prepost.PreAuthorize("@acceso.miembro(#id)")
     public ResponseEntity<List<MiembroResponseDTO>> listarMiembros(@PathVariable Long id) {
         List<MiembroResponseDTO> response = miembroService.listarMiembros(id);
         return ResponseEntity.ok(response);
@@ -87,6 +90,7 @@ public class MiembroController {
      * @return ResponseEntity con el MiembroResponseDTO actualizado y codigo HTTP 200 OK.
      */
     @PutMapping("/{id}/miembros/{usuarioId}/sueldo")
+    @org.springframework.security.access.prepost.PreAuthorize("@acceso.miembro(#id) and @acceso.propio(#usuarioId)")
     public ResponseEntity<MiembroResponseDTO> actualizarSueldo(@PathVariable Long id,
                                                                @PathVariable Long usuarioId,
                                                                @Valid @RequestBody ActualizarSueldoDTO actualizarSueldoDTO) {
@@ -100,17 +104,16 @@ public class MiembroController {
      * @param id Identificador unico del espacio.
      * @param usuarioId Identificador del usuario miembro.
      * @param rol Nuevo rol a asignar.
-     * @param solicitanteId Identificador opcional del usuario administrador solicitante.
+     * @param solicitanteId Parametro heredado; los permisos se verifican con el JWT.
      * @return ResponseEntity con el MiembroResponseDTO con el rol actualizado.
      */
     @PatchMapping("/{id}/miembros/{usuarioId}/rol")
+    @org.springframework.security.access.prepost.PreAuthorize("@acceso.admin(#id)")
     public ResponseEntity<MiembroResponseDTO> asignarRol(@PathVariable Long id,
                                                          @PathVariable Long usuarioId,
                                                          @RequestParam RolMiembro rol,
                                                          @RequestParam(required = false) Long solicitanteId) {
-        MiembroResponseDTO response = (solicitanteId != null)
-                ? miembroService.asignarRol(id, usuarioId, rol, solicitanteId)
-                : miembroService.asignarRol(id, usuarioId, rol);
+        MiembroResponseDTO response = miembroService.asignarRol(id, usuarioId, rol);
         return ResponseEntity.ok(response);
     }
 }

@@ -223,7 +223,7 @@ class MiembroControllerTest {
                 .rol(RolMiembro.ADMIN)
                 .build();
 
-        when(miembroService.asignarRol(10L, 100L, RolMiembro.ADMIN, 50L)).thenReturn(miembroRolCambiado);
+        when(miembroService.asignarRol(10L, 100L, RolMiembro.ADMIN)).thenReturn(miembroRolCambiado);
 
         mockMvc.perform(patch("/api/v1/espacios/10/miembros/100/rol")
                         .param("rol", "ADMIN")
@@ -231,15 +231,15 @@ class MiembroControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.rol").value("ADMIN"));
 
-        verify(miembroService).asignarRol(10L, 100L, RolMiembro.ADMIN, 50L);
+        verify(miembroService).asignarRol(10L, 100L, RolMiembro.ADMIN);
     }
 
     /**
      * Valida que si el solicitante no es administrador se retorne codigo HTTP 400 Bad Request.
      */
     @Test
-    void asignarRol_SolicitanteNoAdmin_RetornaBadRequest() throws Exception {
-        when(miembroService.asignarRol(10L, 100L, RolMiembro.ADMIN, 50L))
+    void asignarRol_ErrorDeNegocio_RetornaBadRequest() throws Exception {
+        when(miembroService.asignarRol(10L, 100L, RolMiembro.ADMIN))
                 .thenThrow(new ReglaInvalidaException("Acceso denegado: se requieren permisos de administrador en el espacio"));
 
         mockMvc.perform(patch("/api/v1/espacios/10/miembros/100/rol")

@@ -22,5 +22,6 @@ public class ActualizarSueldoDTO {
 
     @NotNull(message = "El sueldo declarado es obligatorio")
     @DecimalMin(value = "0.0", inclusive = true, message = "El sueldo declarado no puede ser negativo")
+    @jakarta.validation.constraints.Digits(integer=10, fraction=2, message="Máximo 10 enteros y 2 decimales")
     private BigDecimal sueldoDeclarado;
 }

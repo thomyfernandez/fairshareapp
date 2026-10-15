@@ -20,5 +20,7 @@ public interface SaldoDeudaRepository extends JpaRepository<SaldoDeuda, Long> {
      * @param estado Estado de deuda a filtrar.
      * @return Lista de deudas que coinciden con el criterio de busqueda.
      */
+    List<SaldoDeuda> findByEspacioId(Long espacioId);
+
     List<SaldoDeuda> findByEspacioIdAndEstado(Long espacioId, EstadoDeuda estado);
 }

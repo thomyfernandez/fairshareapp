@@ -43,9 +43,8 @@ public class UsuarioController {
      * @return ResponseEntity con mensaje de confirmacion y codigo HTTP 201 Created.
      */
     @PostMapping("/registro")
-    public ResponseEntity<String> registro(@Valid @RequestBody RegistroUsuarioRequest request) {
-        usuarioService.registrarUsuario(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body("OK");
+    public ResponseEntity<UsuarioResponse> registro(@Valid @RequestBody RegistroUsuarioRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(usuarioService.registrarUsuario(request));
     }
 
     /**
@@ -70,5 +69,10 @@ public class UsuarioController {
     public ResponseEntity<List<UsuarioResponse>> getAllUsuarios() {
         List<UsuarioResponse> res = usuarioService.getAllUsuarios();
         return ResponseEntity.ok(res);
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<UsuarioResponse> me() {
+        return ResponseEntity.ok(UsuarioResponse.de(com.example.fairshareapp.security.UsuarioActual.requerido()));
     }
 }

@@ -37,6 +37,7 @@ import java.util.List;
 @Transactional
 public class GastoService {
 
+    private final com.example.fairshareapp.repository.MiembroEspacioRepository miembroEspacioRepository;
     private final GastoRepository gastoRepository;
     private final EspacioRepository espacioRepository;
     private final UsuarioRepository usuarioRepository;
@@ -56,7 +57,8 @@ public class GastoService {
             EspacioRepository espacioRepository,
             UsuarioRepository usuarioRepository,
             CategoriaRepository categoriaRepository,
-            SueldoRepository sueldoRepository) {
+            SueldoRepository sueldoRepository, com.example.fairshareapp.repository.MiembroEspacioRepository miembroEspacioRepository) {
+        this.miembroEspacioRepository = miembroEspacioRepository;
         this.gastoRepository = gastoRepository;
         this.espacioRepository = espacioRepository;
         this.usuarioRepository = usuarioRepository;
@@ -83,6 +85,13 @@ public class GastoService {
                 .orElseThrow(() -> new RecursoNoEncontradoException(
                         "Usuario pagador no encontrado con id: " + dto.getPagadorId()));
 
+        validarMiembro(espacioId, pagador.getId());
+        java.util.Set<Long> participantesUnicos = new java.util.HashSet<>();
+        for (var p : dto.getParticipantes()) {
+            if (p == null || p.getUsuarioId() == null || !participantesUnicos.add(p.getUsuarioId()))
+                throw new ReglaInvalidaException("Los participantes deben ser válidos y no repetirse");
+            validarMiembro(espacioId, p.getUsuarioId());
+        }
         Categoria categoria = null;
         if (dto.getCategoriaId() != null) {
             categoria = categoriaRepository.findById(dto.getCategoriaId())
@@ -155,6 +164,10 @@ public class GastoService {
                 throw new ReglaInvalidaException("La fecha desde no puede ser posterior a la fecha hasta");
             }
             gastos = gastoRepository.findByEspacioIdAndFechaBetweenOrderByFechaDesc(espacioId, fechaDesde, fechaHasta);
+        } else if (fechaDesde != null) {
+            gastos = gastoRepository.findByEspacioIdAndFechaGreaterThanEqualOrderByFechaDesc(espacioId, fechaDesde);
+        } else if (fechaHasta != null) {
+            gastos = gastoRepository.findByEspacioIdAndFechaLessThanEqualOrderByFechaDesc(espacioId, fechaHasta);
         } else {
             gastos = gastoRepository.findByEspacioIdOrderByFechaDesc(espacioId);
         }
@@ -176,15 +189,21 @@ public class GastoService {
     }
 
     /**
-     * Elimina un gasto del sistema y sus participaciones asociadas en cascada.
+     * Elimina un gasto del sistema validando que no se encuentre liquidado.
      *
      * @param gastoId Identificador del gasto a eliminar.
      */
+    
     public void eliminarGasto(Long gastoId) {
-        if (!gastoRepository.existsById(gastoId)) {
-            throw new RecursoNoEncontradoException("Gasto no encontrado con id: " + gastoId);
+        Gasto gasto = gastoRepository.findById(gastoId)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Gasto no encontrado con id: " + gastoId));
+
+        // Valida que el gasto no haya sido cerrado por el motor de liquidaciones
+        if (gasto.getEstado() == com.example.fairshareapp.model.enums.EstadoGasto.LIQUIDADO) {
+            throw new ReglaInvalidaException("No se puede eliminar un gasto que ya se encuentra liquidado");
         }
-        gastoRepository.deleteById(gastoId);
+
+        gastoRepository.delete(gasto);
     }
 
     /**
@@ -200,7 +219,7 @@ public class GastoService {
         if (dto.getDescripcion() == null || dto.getDescripcion().trim().isEmpty()) {
             throw new ReglaInvalidaException("La descripcion del gasto es obligatoria");
         }
-        if (dto.getMonto() == null || dto.getMonto().doubleValue() <= 0) {
+        if (dto.getMonto() == null || dto.getMonto().signum() <= 0) {
             throw new ReglaInvalidaException("El monto del gasto debe ser un valor positivo");
         }
         if (dto.getPagadorId() == null) {
@@ -311,6 +330,7 @@ public class GastoService {
 
         for (int i = 0; i < usuarios.size(); i++) {
             BigDecimal sueldoDeclarado = resolverSueldoParticipante(usuarios.get(i), dtos.get(i), anioGasto, mesGasto);
+            if (sueldoDeclarado == null || sueldoDeclarado.signum() <= 0) throw new ReglaInvalidaException("Todos los ingresos deben ser positivos para el reparto proporcional");
             sueldos.add(sueldoDeclarado);
             totalSueldos = totalSueldos.add(sueldoDeclarado);
         }
@@ -322,7 +342,7 @@ public class GastoService {
             BigDecimal sueldo = sueldos.get(i);
             // Multiplica monto por sueldo antes de dividir por totalSueldos para mantener
             // maxima precision
-            BigDecimal importe = montoTotal.multiply(sueldo).divide(totalSueldos, 2, RoundingMode.HALF_UP);
+            BigDecimal importe = montoTotal.multiply(sueldo).divide(totalSueldos, 2, RoundingMode.DOWN);
             BigDecimal porcentaje = sueldo.multiply(BigDecimal.valueOf(100.0)).divide(totalSueldos, 2,
                     RoundingMode.HALF_UP);
 
@@ -358,7 +378,7 @@ public class GastoService {
      * @return Sueldo declarado mayor a cero.
      */
     private BigDecimal resolverSueldoParticipante(Usuario usuario, GastoParticipanteDTO partDto, int anioGasto, int mesGasto) {
-        if (partDto.getSueldo() != null && partDto.getSueldo().doubleValue() > 0) {
+        if (partDto.getSueldo() != null && partDto.getSueldo().signum() > 0) {
             return partDto.getSueldo();
         }
 
@@ -407,6 +427,7 @@ public class GastoService {
                     "Para la regla personalizada se requiere indicar porcentajes o montos por participante");
         }
 
+        if (usaPorcentajes && usaImportes) throw new ReglaInvalidaException("Use porcentajes o importes, no ambos");
         if (usaPorcentajes) {
             return calcularDivisionPorPorcentajes(gasto, montoTotal, usuarios, dtos);
         }
@@ -437,7 +458,7 @@ public class GastoService {
         }
 
         // Validar que la suma de porcentajes coincida con el 100% con tolerancia minima
-        if (sumaPorcentajes.subtract(BigDecimal.valueOf(100.0)).abs().compareTo(BigDecimal.valueOf(0.01)) > 0) {
+        if (sumaPorcentajes.compareTo(BigDecimal.valueOf(100)) != 0) {
             throw new ReglaInvalidaException(
                     "La suma de porcentajes debe ser exactamente 100%. Suma actual: " + sumaPorcentajes);
         }
@@ -447,7 +468,7 @@ public class GastoService {
         for (int i = 0; i < usuarios.size(); i++) {
             BigDecimal porcentaje = dtos.get(i).getPorcentaje();
             BigDecimal importe = montoTotal.multiply(porcentaje)
-                    .divide(BigDecimal.valueOf(100.0), 2, RoundingMode.HALF_UP);
+                    .divide(BigDecimal.valueOf(100.0), 2, RoundingMode.DOWN);
 
             sumaImportes = sumaImportes.add(importe);
             resultado.add(GastoParticipante.builder()
@@ -491,7 +512,7 @@ public class GastoService {
         }
 
         // Validar que la suma de importes equivalga exactamente al total
-        if (sumaImportes.subtract(montoTotal).abs().compareTo(BigDecimal.valueOf(0.01)) > 0) {
+        if (sumaImportes.compareTo(montoTotal) != 0) {
             throw new ReglaInvalidaException("La suma de importes fijados (" + sumaImportes +
                     ") no coincide con el monto total (" + montoTotal + ")");
         }
@@ -535,6 +556,7 @@ public class GastoService {
 
         return GastoDetalleDTO.builder()
                 .id(gasto.getId())
+                .estado(gasto.getEstado())
                 .descripcion(gasto.getDescripcion())
                 .monto(gasto.getMonto())
                 .fecha(gasto.getFecha())
@@ -550,5 +572,10 @@ public class GastoService {
                 .regla(gasto.getReglaDivision())
                 .participantes(participantesDTO)
                 .build();
+    }
+
+    private void validarMiembro(Long espacioId, Long usuarioId) {
+        if (!miembroEspacioRepository.existsByEspacioIdAndUsuarioId(espacioId, usuarioId))
+            throw new ReglaInvalidaException("Pagador y participantes deben pertenecer al espacio");
     }
 }

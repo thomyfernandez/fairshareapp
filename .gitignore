@@ -31,3 +31,13 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Configuración privada, datos y entregables generados
+.env
+.env.*
+!.env.example
+data/
+delivery/
+*.log
+frontend/node_modules/
+frontend/dist/

@@ -49,4 +49,10 @@ public interface GastoRepository extends JpaRepository<Gasto, Long> {
      * @return Lista de gastos pertenecientes a dicho espacio.
      */
     List<Gasto> findByIdInAndEspacioId(List<Long> ids, Long espacioId);
+
+    // Buscar gastos desde una fecha en adelante
+    List<Gasto> findByEspacioIdAndFechaGreaterThanEqualOrderByFechaDesc(Long espacioId, LocalDate fechaDesde);
+
+    // Buscar gastos hasta una fecha tope
+    List<Gasto> findByEspacioIdAndFechaLessThanEqualOrderByFechaDesc(Long espacioId, LocalDate fechaHasta);
 }

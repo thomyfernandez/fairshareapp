@@ -33,6 +33,11 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SaldoDeuda {
+    @jakarta.persistence.Version
+    private Long version;
+    @Builder.Default
+    @Column(nullable=false, precision=19, scale=2, columnDefinition="decimal(19,2) default 0")
+    private BigDecimal montoPagado = BigDecimal.ZERO;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -8,6 +8,7 @@ import com.example.fairshareapp.model.dto.GastoParticipanteDTO;
 import com.example.fairshareapp.model.entity.Categoria;
 import com.example.fairshareapp.model.entity.Espacio;
 import com.example.fairshareapp.model.entity.Gasto;
+import com.example.fairshareapp.model.enums.EstadoGasto;
 import com.example.fairshareapp.model.enums.ReglaDivision;
 import com.example.fairshareapp.model.entity.Usuario;
 import com.example.fairshareapp.repository.CategoriaRepository;
@@ -57,6 +58,9 @@ class GastoServiceTest {
     @Mock
     private SueldoRepository sueldoRepository;
 
+    @Mock
+    private com.example.fairshareapp.repository.MiembroEspacioRepository miembroEspacioRepository;
+
     @InjectMocks
     private GastoService gastoService;
 
@@ -71,6 +75,7 @@ class GastoServiceTest {
      */
     @BeforeEach
     void setUp() {
+        org.mockito.Mockito.lenient().when(miembroEspacioRepository.existsByEspacioIdAndUsuarioId(org.mockito.ArgumentMatchers.anyLong(), org.mockito.ArgumentMatchers.anyLong())).thenReturn(true);
         espacio = Espacio.builder().id(1L).nombre("Departamento Centro").build();
 
         usuario1 = Usuario.builder()
@@ -410,11 +415,12 @@ class GastoServiceTest {
      */
     @Test
     void eliminarGasto_GastoExistente_InvocaDeleteById() {
-        when(gastoRepository.existsById(10L)).thenReturn(true);
+        Gasto gastoMock = Gasto.builder().id(10L).estado(EstadoGasto.PENDIENTE).build();
+        when(gastoRepository.findById(10L)).thenReturn(Optional.of(gastoMock));
 
         gastoService.eliminarGasto(10L);
 
-        verify(gastoRepository).deleteById(10L);
+        verify(gastoRepository).delete(gastoMock);
     }
 
     /**
@@ -422,7 +428,7 @@ class GastoServiceTest {
      */
     @Test
     void eliminarGasto_Inexistente_LanzaRecursoNoEncontradoException() {
-        when(gastoRepository.existsById(999L)).thenReturn(false);
+        when(gastoRepository.findById(999L)).thenReturn(Optional.empty());
 
         assertThrows(RecursoNoEncontradoException.class, () -> gastoService.eliminarGasto(999L));
     }

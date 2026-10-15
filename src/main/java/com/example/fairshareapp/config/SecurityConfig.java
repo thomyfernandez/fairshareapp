@@ -5,8 +5,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import com.example.fairshareapp.security.*;
+import org.springframework.context.annotation.*;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -37,42 +39,39 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .csrf(csrf -> csrf.disable())
-            .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            )
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                .requestMatchers("/api/v1/usuarios/**").permitAll()
-                .requestMatchers("/api/v1/espacios/**").authenticated()
-                .requestMatchers("/api/v1/gastos/**").authenticated()
-                .requestMatchers("/api/v1/sueldos/**").authenticated()
-                .requestMatchers("/api/v1/deudas/**").authenticated()
-                .requestMatchers("/api/v1/favoritos/**").authenticated()
-                .anyRequest().authenticated()
-            )
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers("/api/v1/usuarios/**").permitAll()
+                        .requestMatchers("/api/v1/espacios/**").authenticated()
+                        .requestMatchers("/api/v1/gastos/**").authenticated()
+                        .requestMatchers("/api/v1/sueldos/**").authenticated()
+                        .requestMatchers("/api/v1/deudas/**").authenticated()
+                        .requestMatchers("/api/v1/favoritos/**").authenticated()
+                        .anyRequest().authenticated())
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
     /**
-     * Configuracion global de CORS para permitir la conexion desde el frontend (React/Vite).
+     * Configuracion global de CORS para permitir la conexion desde el frontend
+     * (React/Vite).
      */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
         configuration.setAllowedOrigins(Arrays.asList(
-            "http://localhost:5173",
-            "http://127.0.0.1:5173",
-            "http://localhost:3000"
-        ));
+                "http://localhost:5173",
+                "http://127.0.0.1:5173",
+                "http://localhost:3000"));
 
         configuration.setAllowedMethods(Arrays.asList(
-            "GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"
-        ));
+                "GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"));
 
         configuration.setAllowedHeaders(Collections.singletonList("*"));
         configuration.setAllowCredentials(true);
