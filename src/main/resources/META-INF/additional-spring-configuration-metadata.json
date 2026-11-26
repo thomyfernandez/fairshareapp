@@ -16,6 +16,21 @@
       "description": "Lista separada por comas de origenes permitidos para la politica de CORS."
     },
     {
+      "name": "app.auth.cookie-name",
+      "type": "java.lang.String",
+      "description": "Nombre de la cookie HttpOnly que transporta el JWT de sesion."
+    },
+    {
+      "name": "app.auth.cookie-secure",
+      "type": "java.lang.Boolean",
+      "description": "Marca la cookie de sesion como Secure (solo HTTPS). Debe ser true en produccion."
+    },
+    {
+      "name": "app.auth.cookie-same-site",
+      "type": "java.lang.String",
+      "description": "Atributo SameSite de la cookie de sesion (Lax por defecto, mitiga CSRF)."
+    },
+    {
       "name": "app.admin.email",
       "type": "java.lang.String",
       "description": "Correo electronico del usuario administrador para inicializacion de datos."
