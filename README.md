@@ -33,7 +33,7 @@ fairshareapp/
 ```
 
 ### Principales aspectos arquitectonicos:
-1. **Seguridad Stateless**: Autenticacion robusta con JWT Bearer y control de acceso basado en roles (`ROLE_USUARIO`, `ROLE_ADMIN`).
+1. **Seguridad Stateless**: Autenticacion con JWT y control de acceso basado en roles (`ROLE_USUARIO`, `ROLE_ADMIN`). El navegador recibe el JWT en una cookie `HttpOnly` + `SameSite=Lax` (no accesible desde JavaScript, mitiga XSS) y las solicitudes que modifican datos con esa cookie exigen el token CSRF (`XSRF-TOKEN` repetido en el header `X-XSRF-TOKEN`). Los clientes de API pueden seguir enviando `Authorization: Bearer`, que no requiere CSRF.
 2. **Division de Gastos Inteligente**: Modulo de calculo de participaciones con multiples reglas (Equitativa, Proporcional a Ingresos, Participacion Parcial y Personalizada).
 3. **Simplificacion de Deudas y Liquidaciones**: Algoritmo de compensacion cruzada de deudas para minimizar transferencias y control de presupuesto base con checkout transaccional.
 4. **Manejo Centralizado de Errores**: Controlador de excepciones global con `@RestControllerAdvice` y respuestas de error HTTP estandarizadas.
@@ -90,9 +90,9 @@ La aplicacion expone documentacion interactiva y la especificacion OpenAPI 3 gen
 - **Especificacion OpenAPI en YAML:** [http://localhost:8080/v3/api-docs.yaml](http://localhost:8080/v3/api-docs.yaml)
 
 Para autenticar peticiones en Swagger UI:
-1. Iniciar sesion o registrarse mediante `/api/v1/usuarios/login` o `/api/v1/usuarios/registro`.
-2. Copiar el valor del token devuelto en la respuesta.
-3. Hacer clic en el boton **Authorize** en la parte superior derecha de Swagger UI e ingresar el token Bearer.
+1. Iniciar sesion mediante `/api/v1/usuarios/login` (o registrarse antes con `/api/v1/usuarios/registro`). El navegador guarda la cookie de sesion `HttpOnly`.
+2. Ejecutar una vez `GET /api/v1/usuarios/csrf`: crea la cookie `XSRF-TOKEN`, que Swagger UI reenvia automaticamente en el header `X-XSRF-TOKEN` (`springdoc.swagger-ui.csrf.enabled=true`).
+3. Las peticiones siguientes quedan autenticadas por la cookie. Alternativa: copiar el valor de la cookie `fairshare_token` (DevTools → Application → Cookies) y usar **Authorize** con el token Bearer.
 
 ---
 
@@ -108,7 +108,9 @@ Para autenticar peticiones en Swagger UI:
 | Metodo | Endpoint | Descripcion |
 | :--- | :--- | :--- |
 | `POST` | `/api/v1/usuarios/registro` | Registra un nuevo usuario en la base de datos (compatible con `/api/usuario/registro`) |
-| `POST` | `/api/v1/usuarios/login` | Valida credenciales de acceso de un usuario y retorna JWT Bearer (compatible con `/api/usuario/login`) |
+| `POST` | `/api/v1/usuarios/login` | Valida credenciales y entrega el JWT en la cookie `HttpOnly` `fairshare_token` (el body no incluye el token; compatible con `/api/usuario/login`) |
+| `POST` | `/api/v1/usuarios/logout` | Cierra la sesion: el servidor vence la cookie `fairshare_token` (`Max-Age=0`) |
+| `GET` | `/api/v1/usuarios/csrf` | Emite la cookie `XSRF-TOKEN` que debe repetirse en el header `X-XSRF-TOKEN` de las solicitudes autenticadas por cookie |
 | `GET` | `/api/v1/usuarios/me` | Retorna los datos del usuario autenticado segun el JWT enviado (compatible con `/api/usuario/me`) |
 | `GET` | `/api/v1/usuarios` | Retorna el listado completo de usuarios (requiere rol global ADMIN, compatible con `/api/usuario/get`) |
 
@@ -191,7 +193,7 @@ El proyecto incluye el archivo `fairshareapp.postman_collection.json` en la raiz
 1. **General & Health**: Ejecutar `Estado del Servicio (Status)` o `Prueba de Conexion (Hello)` para verificar la conectividad con el backend.
 2. **Registro y Login**:
    - Ejecutar `Registrar Usuario Principal`: los pre-request scripts generan automaticamente credenciales unicas y configuran las variables.
-   - Ejecutar `Login de Usuario Principal`: el test script captura de forma automatica el token JWT y lo asigna a la variable `authToken`. Todas las peticiones subsecuentes heredan esta autorizacion Bearer.
+   - Ejecutar `Login de Usuario Principal`: el test script toma el JWT de la cookie `fairshare_token` y lo asigna a la variable `authToken`. Todas las peticiones subsecuentes heredan esta autorizacion Bearer.
    - Ejecutar `Obtener Perfil de Usuario Autenticado (/me)` para verificar la identidad devuelta por el JWT.
    - Ejecutar `Registrar Usuario Secundario` y `Login Usuario Secundario` para preparar las pruebas grupales (captura `authTokenUser2` y `usuarioId2`).
    - Ejecutar `Registrar Usuario Terciario` y `Login Usuario Terciario` para pruebas de union directa por codigo (`authTokenUser3` y `usuarioId3`).

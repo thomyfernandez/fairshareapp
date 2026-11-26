@@ -289,7 +289,7 @@
 									"pm.test(\"Autenticacion exitosa y token JWT generado\", function () {",
 									"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
 									"});",
-									"if (pm.response.code === 200) {\n    var data = pm.response.json();\n    if (data && data.token) {\n        pm.collectionVariables.set(\"authToken\", data.token);\n    }\n    if (data && data.usuario && data.usuario.id) {\n        pm.collectionVariables.set(\"usuarioId\", String(data.usuario.id));\n    }\n}"
+									"if (pm.response.code === 200) {\n    var data = pm.response.json();\n    if (pm.cookies.get(\"fairshare_token\")) {\n        pm.collectionVariables.set(\"authToken\", pm.cookies.get(\"fairshare_token\"));\n    }\n    if (data && data.usuario && data.usuario.id) {\n        pm.collectionVariables.set(\"usuarioId\", String(data.usuario.id));\n    }\n}"
 								],
 								"type": "text/javascript"
 							}
@@ -428,7 +428,7 @@
 									"pm.test(\"Login exitoso de usuario secundario\", function () {",
 									"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
 									"});",
-									"if (pm.response.code === 200) {\n    var data = pm.response.json();\n    if (data && data.token) {\n        pm.collectionVariables.set(\"authTokenUser2\", data.token);\n    }\n    if (data && data.usuario && data.usuario.id) {\n        pm.collectionVariables.set(\"usuarioId2\", String(data.usuario.id));\n    }\n}"
+									"if (pm.response.code === 200) {\n    var data = pm.response.json();\n    if (pm.cookies.get(\"fairshare_token\")) {\n        pm.collectionVariables.set(\"authTokenUser2\", pm.cookies.get(\"fairshare_token\"));\n    }\n    if (data && data.usuario && data.usuario.id) {\n        pm.collectionVariables.set(\"usuarioId2\", String(data.usuario.id));\n    }\n}"
 								],
 								"type": "text/javascript"
 							}
@@ -533,7 +533,7 @@
 									"pm.test(\"Login exitoso de usuario terciario\", function () {",
 									"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
 									"});",
-									"if (pm.response.code === 200) {\n    var data = pm.response.json();\n    if (data && data.token) {\n        pm.collectionVariables.set(\"authTokenUser3\", data.token);\n    }\n    if (data && data.usuario && data.usuario.id) {\n        pm.collectionVariables.set(\"usuarioId3\", String(data.usuario.id));\n    }\n}"
+									"if (pm.response.code === 200) {\n    var data = pm.response.json();\n    if (pm.cookies.get(\"fairshare_token\")) {\n        pm.collectionVariables.set(\"authTokenUser3\", pm.cookies.get(\"fairshare_token\"));\n    }\n    if (data && data.usuario && data.usuario.id) {\n        pm.collectionVariables.set(\"usuarioId3\", String(data.usuario.id));\n    }\n}"
 								],
 								"type": "text/javascript"
 							}
@@ -580,7 +580,7 @@
 									"pm.test(\"Login exitoso de administrador\", function () {",
 									"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
 									"});",
-									"if (pm.response.code === 200) {\n    var data = pm.response.json();\n    if (data && data.token) {\n        pm.collectionVariables.set(\"authTokenAdmin\", data.token);\n    }\n}"
+									"if (pm.response.code === 200) {\n    var data = pm.response.json();\n    if (pm.cookies.get(\"fairshare_token\")) {\n        pm.collectionVariables.set(\"authTokenAdmin\", pm.cookies.get(\"fairshare_token\"));\n    }\n}"
 								],
 								"type": "text/javascript"
 							}

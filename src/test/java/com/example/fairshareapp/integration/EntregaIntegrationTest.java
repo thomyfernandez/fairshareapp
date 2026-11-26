@@ -42,9 +42,14 @@ class EntregaIntegrationTest {
             Map.of("nombre","Ana","apellido","Prueba","usuario","ana","email",email,"contra","Password123!","rol","ADMIN"),201);
         assertEquals("USUARIO", r.path("rol").asString()); assertFalse(r.has("contra")); assertFalse(r.has("password"));
         assertTrue(encoder.matches("Password123!", usuarios.findById(r.path("id").asLong()).orElseThrow().getContra()));
-        var login = call("POST", "/api/v1/usuarios/login", null, Map.of("email",email,"contra","Password123!"),200);
-        assertEquals("Bearer", login.path("tokenType").asString());
-        return new Cuenta(r.path("id").asLong(), email, login.path("token").asString());
+        var loginResponse = mvc.perform(MockMvcRequestBuilders.post("/api/v1/usuarios/login").contentType("application/json")
+            .content(mapper.writeValueAsString(Map.of("email",email,"contra","Password123!")))).andReturn().getResponse();
+        assertEquals(200, loginResponse.getStatus());
+        // El JWT viaja solo en la cookie HttpOnly; estos tests lo reutilizan como Bearer (cliente de API).
+        assertFalse(mapper.readTree(loginResponse.getContentAsString()).has("token"));
+        var cookie = loginResponse.getCookie("fairshare_token");
+        assertTrue(cookie != null && cookie.isHttpOnly());
+        return new Cuenta(r.path("id").asLong(), email, cookie.getValue());
     }
     JsonNode espacio(Cuenta c) throws Exception {
         return call("POST", "/api/v1/espacios", c.token(), Map.of("nombre","Espacio "+UUID.randomUUID(),

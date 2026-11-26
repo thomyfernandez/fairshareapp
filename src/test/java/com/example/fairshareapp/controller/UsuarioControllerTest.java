@@ -7,24 +7,27 @@ import com.example.fairshareapp.model.request.LoginRequest;
 import com.example.fairshareapp.model.request.RegistroUsuarioRequest;
 import com.example.fairshareapp.model.response.LoginResponse;
 import com.example.fairshareapp.model.response.UsuarioResponse;
+import com.example.fairshareapp.security.AuthCookieService;
 import com.example.fairshareapp.service.UsuarioService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.List;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -40,14 +43,13 @@ class UsuarioControllerTest {
     @Mock
     private UsuarioService usuarioService;
 
-    @InjectMocks
-    private UsuarioController usuarioController;
-
     /**
      * Inicializa MockMvc en modo standalone configurando el manejador global de excepciones.
      */
     @BeforeEach
     void setUp() {
+        AuthCookieService authCookieService = new AuthCookieService("fairshare_token", false, "Lax", 3_600_000L);
+        UsuarioController usuarioController = new UsuarioController(usuarioService, authCookieService);
         mockMvc = MockMvcBuilders.standaloneSetup(usuarioController)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
@@ -102,7 +104,7 @@ class UsuarioControllerTest {
     }
 
     /**
-     * Valida el inicio de sesion correcto retornando codigo 200 OK y token JWT.
+     * Valida que el login entregue el JWT en una cookie HttpOnly y SameSite=Lax, sin token en el body.
      */
     @Test
     void login_credencialesValidas_retornaOk() throws Exception {
@@ -120,7 +122,23 @@ class UsuarioControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.token").value("mock-jwt-token"));
+                .andExpect(header().string(HttpHeaders.SET_COOKIE, containsString("fairshare_token=mock-jwt-token")))
+                .andExpect(header().string(HttpHeaders.SET_COOKIE, containsString("HttpOnly")))
+                .andExpect(header().string(HttpHeaders.SET_COOKIE, containsString("SameSite=Lax")))
+                .andExpect(jsonPath("$.token").doesNotExist())
+                .andExpect(jsonPath("$.email").value("carlos@example.com"));
+    }
+
+    /**
+     * Valida que el logout venza la cookie de sesion (Max-Age=0).
+     */
+    @Test
+    void logout_venceLaCookie() throws Exception {
+        mockMvc.perform(post("/api/v1/usuarios/logout"))
+                .andExpect(status().isNoContent())
+                .andExpect(header().string(HttpHeaders.SET_COOKIE, containsString("fairshare_token=")))
+                .andExpect(header().string(HttpHeaders.SET_COOKIE, containsString("Max-Age=0")))
+                .andExpect(header().string(HttpHeaders.SET_COOKIE, containsString("HttpOnly")));
     }
 
     /**
